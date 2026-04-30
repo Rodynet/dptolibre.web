@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre - Onboarding Inmobiliario</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-blue: #0055DD;
+            --brand-dark: #0A142F;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-select {
+            @apply flex flex-col items-center justify-center p-6 border-2 border-slate-100 rounded-[2rem] bg-white transition-all hover:border-[#0055DD] hover:shadow-xl active:scale-[0.98] text-slate-400 hover:text-[#0055DD];
+        }
+        .btn-select.active {
+            @apply border-[#0055DD] bg-blue-50 text-[#0055DD] shadow-lg;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .input-pill {
+            @apply w-full bg-slate-50 border-none px-6 py-4 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-[#0055DD] outline-none transition-all;
+        }
+
+        .amenity-chip {
+            @apply px-4 py-2 rounded-full border-2 border-slate-100 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all;
+        }
+        .amenity-chip.active {
+            @apply border-[#0055DD] bg-blue-50 text-[#0055DD];
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { window.lucide && window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        function DptoLibreOnboarding() {
+            // ESTADOS: welcome, method_select, property_form, bulk_upload, link_import, qr_scan, dashboard
+            const [step, setStep] = useState('welcome');
+            const [propertyData, setPropertyData] = useState({
+                type: 'Departamento',
+                rooms: 1,
+                bathrooms: 1,
+                garage: false,
+                outdoor: 'Ninguno',
+                amenities: []
+            });
+
+            // --- VISTA 1: BIENVENIDA (EMPTY STATE) ---
+            const WelcomeView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-xl w-full text-center">
+                        <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-[#0055DD] shadow-inner">
+                            <Icon name="building-2" size={48} />
+                        </div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4">¡Hola Rodrigo!<br/>Empecemos tu cartera</h1>
+                        <p className="text-slate-400 font-medium mb-12 px-10 leading-relaxed text-lg">
+                            Detectamos que aún no tienes activos vinculados. Sube tu primera propiedad para activar el blindaje legal y financiero.
+                        </p>
+                        <button onClick={() => setStep('method_select')} className="bg-[#0055DD] text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 active:scale-95 transition-all">
+                            Cargar Mi Primer Activo
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 2: SELECCIÓN DE MÉTODO ---
+            const MethodSelectView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-4xl w-full">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">¿Cómo quieres cargar tus datos?</h2>
+                            <p className="text-slate-400 font-medium mt-2">Fricción cero: elige el camino más rápido para ti.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <button onClick={() => setStep('property_form')} className="btn-select">
+                                <Icon name="plus-circle" size={32} className="mb-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Uno por Uno</span>
+                                <p className="text-[8px] mt-2 uppercase opacity-60">Recomendado</p>
+                            </button>
+                            <button onClick={() => setStep('bulk_upload')} className="btn-select">
+                                <Icon name="file-spreadsheet" size={32} className="mb-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Carga Masiva</span>
+                                <p className="text-[8px] mt-2 uppercase opacity-60">Excel / CRM</p>
+                            </button>
+                            <button onClick={() => setStep('link_import')} className="btn-select">
+                                <Icon name="link" size={32} className="mb-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Importar Link</span>
+                                <p className="text-[8px] mt-2 uppercase opacity-60">Portales</p>
+                            </button>
+                            <button onClick={() => setStep('qr_scan')} className="btn-select">
+                                <Icon name="qr-code" size={32} className="mb-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Vía QR</span>
+                                <p className="text-[8px] mt-2 uppercase opacity-60">De Cliente</p>
+                            </button>
+                        </div>
+                        <div className="mt-12 text-center">
+                            <button onClick={() => setStep('welcome')} className="text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] border-b-2 border-slate-100 pb-1">Volver</button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 3: CARGA INDIVIDUAL (FORMULARIO DINÁMICO) ---
+            const PropertyFormView = () => {
+                const [formSubStep, setFormSubStep] = useState(1);
+                
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                        <div className="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl p-12 relative border border-slate-100 overflow-hidden">
+                            
+                            {/* Barra de Progreso Interna */}
+                            <div className="absolute top-0 left-0 w-full h-2 bg-slate-50 flex">
+                                <div className={`h-full bg-[#0055DD] transition-all duration-500`} style={{ width: `${(formSubStep/3)*100}%` }}></div>
+                            </div>
+
+                            {formSubStep === 1 && (
+                                <div className="space-y-10 animate-in">
+                                    <header>
+                                        <h3 className="text-2xl font-black text-slate-800 leading-none">Ubicación de la Propiedad</h3>
+                                        <p className="text-slate-400 text-sm mt-2">La geolocalización completará los datos por ti.</p>
+                                    </header>
+                                    <div className="space-y-4">
+                                        <div className="relative">
+                                            <Icon name="map-pin" className="absolute left-5 top-5 text-[#0055DD]" size={20}/>
+                                            <input type="text" placeholder="Ingresa la dirección completa..." className="input-pill pl-14" />
+                                        </div>
+                                        <div className="h-48 bg-slate-100 rounded-3xl overflow-hidden border-2 border-white shadow-inner flex items-center justify-center">
+                                            <div className="text-center opacity-30">
+                                                <Icon name="map" size={40} className="mx-auto mb-2" />
+                                                <p className="text-[10px] font-black uppercase tracking-widest leading-none">Mapa Interactivo de Selección</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input type="text" placeholder="Barrio" className="input-pill bg-slate-100/50" />
+                                            <input type="text" placeholder="Localidad" className="input-pill bg-slate-100/50" />
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setFormSubStep(2)} className="w-full bg-[#0055DD] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Siguiente: Características</button>
+                                </div>
+                            )}
+
+                            {formSubStep === 2 && (
+                                <div className="space-y-8 animate-in">
+                                    <header>
+                                        <h3 className="text-2xl font-black text-slate-800 leading-none">Características Principales</h3>
+                                        <p className="text-slate-400 text-sm mt-2">Cuéntanos más de tu propiedad.</p>
+                                    </header>
+                                    
+                                    <div className="space-y-6">
+                                        {/* Tipo de propiedad */}
+                                        <div className="flex gap-2">
+                                            {['Departamento', 'Casa', 'Campo'].map(t => (
+                                                <button key={t} onClick={() => setPropertyData({...propertyData, type: t})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${propertyData.type === t ? 'border-[#0055DD] bg-blue-50 text-[#0055DD]' : 'border-slate-100 text-slate-400'}`}>
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ambientes</label>
+                                                <div className="flex items-center gap-4">
+                                                    <button onClick={() => setPropertyData({...propertyData, rooms: Math.max(1, propertyData.rooms-1)})} className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center font-bold">-</button>
+                                                    <span className="text-xl font-black">{propertyData.rooms}</span>
+                                                    <button onClick={() => setPropertyData({...propertyData, rooms: propertyData.rooms+1})} className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center font-bold">+</button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Baños</label>
+                                                <div className="flex items-center gap-4">
+                                                    <button onClick={() => setPropertyData({...propertyData, bathrooms: Math.max(1, propertyData.bathrooms-1)})} className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center font-bold">-</button>
+                                                    <span className="text-xl font-black">{propertyData.bathrooms}</span>
+                                                    <button onClick={() => setPropertyData({...propertyData, bathrooms: propertyData.bathrooms+1})} className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center font-bold">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Outdoor</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['Ninguno', 'Balcón', 'Terraza', 'Patio'].map(o => (
+                                                    <span key={o} onClick={() => setPropertyData({...propertyData, outdoor: o})} className={`amenity-chip ${propertyData.outdoor === o ? 'active' : ''}`}>{o}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Amenities</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['Cochera', 'SUM', 'Pileta', 'Gimnasio', 'Parrilla', 'Seguridad 24hs'].map(a => (
+                                                    <span 
+                                                        key={a} 
+                                                        onClick={() => {
+                                                            const news = propertyData.amenities.includes(a) ? propertyData.amenities.filter(x => x !== a) : [...propertyData.amenities, a];
+                                                            setPropertyData({...propertyData, amenities: news});
+                                                        }} 
+                                                        className={`amenity-chip ${propertyData.amenities.includes(a) ? 'active' : ''}`}
+                                                    >
+                                                        {a}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setFormSubStep(3)} className="w-full bg-[#0055DD] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Siguiente: Multimedia</button>
+                                </div>
+                            )}
+
+                            {formSubStep === 3 && (
+                                <div className="space-y-8 animate-in">
+                                    <header>
+                                        <h3 className="text-2xl font-black text-slate-800 leading-none">Fotos de la Propiedad</h3>
+                                        <p className="text-slate-400 text-sm mt-2">Puedes subir archivos o fotos desde tu móvil.</p>
+                                    </header>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-300 hover:border-[#0055DD] hover:text-[#0055DD] transition-all cursor-pointer group">
+                                            <Icon name="upload-cloud" size={32} className="mb-2 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-center px-4 leading-tight">Soltar fotos aquí o buscar</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-slate-100 rounded-2xl animate-pulse"></div>
+                                            <div className="bg-slate-100 rounded-2xl animate-pulse"></div>
+                                            <div className="bg-slate-100 rounded-2xl animate-pulse"></div>
+                                            <div className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 text-xl font-bold">+</div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100">
+                                        <p className="text-[10px] text-amber-700 font-bold leading-relaxed italic">
+                                            TIP: Las propiedades con más de 10 fotos cierran contratos un 35% más rápido.
+                                        </p>
+                                    </div>
+                                    <button onClick={() => setStep('dashboard')} className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-100">Finalizar Alta</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- VISTA 4: IMPORTACIÓN POR LINK ---
+            const LinkImportView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 text-center border border-slate-100">
+                        <div className="w-16 h-16 bg-blue-50 text-[#0055DD] rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                            <Icon name="rocket" size={32} />
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-4">Importar Publicación</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed px-4">
+                            Pega el link de Zonaprop, Argenprop o Mercado Libre y nosotros extraeremos todos los datos por ti.
+                        </p>
+                        <input type="text" placeholder="https://www.zonaprop.com.ar/..." className="input-pill mb-6" />
+                        <button onClick={() => setStep('dashboard')} className="w-full bg-[#0055DD] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Analizar Publicación</button>
+                        <button onClick={() => setStep('method_select')} className="mt-8 text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver</button>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 5: SCANNER QR ---
+            const QrScanView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 text-center border border-slate-100">
+                        <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-4">Vincular Cliente</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed px-4">
+                            ¿Tu cliente te compartió su pasaporte? Escanea el QR para cargarlo automáticamente a tu gestión.
+                        </p>
+                        <div className="w-full aspect-square bg-slate-900 rounded-[2rem] border-4 border-[#0055DD]/20 relative flex items-center justify-center overflow-hidden shadow-2xl mb-8">
+                             <div className="w-full h-1 bg-[#00D1FF]/40 absolute top-1/2 -translate-y-1/2 animate-bounce"></div>
+                             <Icon name="maximize" className="text-white opacity-20" size={64} />
+                             <p className="absolute bottom-6 text-[8px] font-black text-white/40 uppercase tracking-[0.3em]">Alinea el código</p>
+                        </div>
+                        <button onClick={() => setStep('dashboard')} className="w-full bg-slate-100 text-slate-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Simular Escaneo Exitoso</button>
+                        <button onClick={() => setStep('method_select')} className="mt-8 text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver</button>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 6: DASHBOARD ACTIVO (CENTRO DE CONTROL) ---
+            const DashboardView = () => (
+                <div className="flex h-screen w-full bg-[#f8fafc] animate-in">
+                    {/* Sidebar Simulado */}
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col p-6 shadow-2xl z-20">
+                        <div className="flex items-center gap-3 mb-10 px-2">
+                            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-black">B</div>
+                            <span className="font-black tracking-tighter text-xl leading-none">BLINDATO</span>
+                        </div>
+                        <nav className="space-y-2 flex-1">
+                            <div className="p-3 bg-indigo-600 rounded-xl font-bold flex items-center gap-3 shadow-lg shadow-indigo-900/20"><Icon name="layout-dashboard" size={18}/> Dashboard</div>
+                            <div className="p-3 text-slate-400 hover:text-white font-bold flex items-center gap-3 transition-colors cursor-pointer"><Icon name="building" size={18}/> Propiedades</div>
+                            <div className="p-3 text-slate-400 hover:text-white font-bold flex items-center gap-3 transition-colors cursor-pointer"><Icon name="users" size={18}/> Inquilinos</div>
+                            <div className="p-3 text-slate-400 hover:text-white font-bold flex items-center gap-3 transition-colors cursor-pointer"><Icon name="wallet" size={18}/> Tesorería</div>
+                        </nav>
+                        <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-700 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow-sm overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-white tracking-tighter">Raíces Inmo</p>
+                                <p className="text-[8px] text-indigo-400 font-bold">Matrícula CPI-8821</p>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Contenido Principal */}
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        <header className="bg-white border-b border-slate-100 p-8 flex justify-between items-center shadow-sm">
+                            <div>
+                                <h1 className="text-2xl font-black text-slate-800">Torre de Control</h1>
+                                <p className="text-slate-400 text-sm font-medium italic">Visión general de tus activos blindados.</p>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <div className="relative">
+                                    <Icon name="search" className="absolute left-4 top-2.5 text-slate-300" size={18}/>
+                                    <input type="text" placeholder="Buscar propiedad, inquilino o contrato..." className="pl-12 pr-6 py-2.5 bg-slate-50 border-none rounded-xl text-sm w-96 font-medium focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                </div>
+                                <div className="p-2.5 bg-slate-50 rounded-xl relative cursor-pointer hover:bg-slate-100 transition-all">
+                                    <Icon name="bell" size={20} className="text-slate-400" />
+                                    <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar pb-32">
+                            {/* KPI CARDS */}
+                            <div className="grid grid-cols-4 gap-6">
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Recaudación Total</p>
+                                    <p className="text-3xl font-black text-slate-800">$12.5M</p>
+                                    <div className="mt-2 flex items-center gap-1 text-[10px] text-emerald-500 font-black">
+                                        <Icon name="trending-up" size={12}/> +8% vs mes anterior
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Honorarios Listos</p>
+                                    <p className="text-3xl font-black text-indigo-600">$840.5k</p>
+                                    <button className="mt-2 text-[#0055DD] text-[9px] font-black uppercase border-b-2 border-[#0055DD]/20 hover:border-[#0055DD] transition-all">Reinvertir Saldo</button>
+                                </div>
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Índice de Blindaje</p>
+                                    <p className="text-3xl font-black text-slate-800">92%</p>
+                                    <p className="mt-2 text-slate-400 text-[10px] font-medium uppercase">114 contratos al 100%</p>
+                                </div>
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Tickets Abiertos</p>
+                                    <p className="text-3xl font-black text-red-500">4</p>
+                                    <p className="mt-2 text-slate-400 text-[10px] font-medium uppercase">2 urgencias por responder</p>
+                                </div>
+                            </div>
+
+                            {/* VALLA DE ATENCIÓN (EL JUEZ) */}
+                            <section className="space-y-6">
+                                <div className="flex justify-between items-center px-1">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Veredictos de Gestión</h2>
+                                        <p className="text-slate-400 text-sm font-medium italic">Acciones inmediatas requeridas por la Secretaría Digital.</p>
+                                    </div>
+                                    <span className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-200 shadow-sm">3 Pendientes</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="bg-white p-6 rounded-[2rem] border-l-[12px] border-emerald-500 border-y border-r border-slate-100 flex items-center justify-between group hover:shadow-xl transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-105 transition-transform"><Icon name="shield-check" size={28}/></div>
+                                            <div>
+                                                <h4 className="font-black text-slate-800 text-lg leading-none">Legajo Verificado: Juan Pérez</h4>
+                                                <p className="text-sm text-slate-500 mt-2 font-medium italic">"El algoritmo detectó solvencia 3.2x. Inquilino y garantes ya firmaron el kit digital."</p>
+                                            </div>
+                                        </div>
+                                        <button className="bg-slate-900 text-white px-10 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100 active:scale-95">DAR OK FINAL</button>
+                                    </div>
+                                    
+                                    <div className="bg-white p-6 rounded-[2rem] border-l-[12px] border-amber-500 border-y border-r border-slate-100 flex items-center justify-between group opacity-80 hover:opacity-100 transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shadow-sm"><Icon name="message-square" size={28}/></div>
+                                            <div>
+                                                <h4 className="font-black text-slate-800 text-lg leading-none">Dueño no autoriza presupuesto</h4>
+                                                <p className="text-sm text-slate-500 mt-2 font-medium italic">"Ticket #8821: El propietario en Caseros 1230 no respondió al presupuesto de \$15.000."</p>
+                                            </div>
+                                        </div>
+                                        <button className="bg-amber-500 text-white px-10 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-amber-50 active:scale-95 transition-all">PUSH URGENCIA</button>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </main>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen w-full relative">
+                    {step === 'welcome' && <WelcomeView />}
+                    {step === 'method_select' && <MethodSelectView />}
+                    {step === 'property_form' && <PropertyFormView />}
+                    {step === 'link_import' && <LinkImportView />}
+                    {step === 'qr_scan' && <QrScanView />}
+                    {step === 'dashboard' && <DashboardView />}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DptoLibreOnboarding />);
+    </script>
+</body>
+</html>
