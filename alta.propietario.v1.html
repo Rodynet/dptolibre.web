@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blindato Admin - Alta Usuario AI-Style</title>
+    <title>Blindato Admin - Alta Usuario Conversacional V2</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -32,7 +32,7 @@
         @keyframes chatIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
         .bot-bubble {
-            @apply bg-white border border-slate-100 p-5 rounded-tr-[2rem] rounded-br-[2rem] rounded-bl-[2rem] shadow-sm max-w-[80%] text-sm font-medium leading-relaxed;
+            @apply bg-white border border-slate-100 p-5 rounded-tr-[2rem] rounded-br-[2rem] rounded-bl-[2rem] shadow-sm max-w-[85%] text-sm font-medium leading-relaxed;
         }
 
         .user-bubble {
@@ -54,6 +54,10 @@
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+        .btn-role {
+            @apply p-4 bg-white border-2 border-slate-50 rounded-2xl text-left font-bold text-slate-700 flex items-center gap-3 hover:border-[#0055DD] hover:bg-blue-50 transition-all active:scale-95;
+        }
     </style>
 </head>
 <body>
@@ -68,19 +72,29 @@
         };
 
         function App() {
-            // Pasos: 0:Bienvenida, 1:Nombre, 2:Apellido, 3:Email, 4:Telefono, 5:Rol, 6:Exito
+            // Pasos: 0:Bienvenida, 1:Nombre, 2:Apellido, 3:Email, 4:Telefono, 5:Rol, 6:Resumen, 7:Exito
             const [step, setStep] = useState(0);
             const [isMassive, setIsMassive] = useState(false);
             const [userData, setUserData] = useState({ name: '', lastName: '', email: '', phone: '', role: '' });
             const [isTyping, setIsTyping] = useState(false);
             const scrollRef = useRef(null);
 
-            const handleNext = (val) => {
+            const handleNext = () => {
+                if (step === 0 && !userData.name) return;
+                if (step === 1 && !userData.lastName) return;
+                if (step === 2 && !userData.email) return;
+                if (step === 3 && !userData.phone) return;
+
                 setIsTyping(true);
                 setTimeout(() => {
                     setIsTyping(false);
                     setStep(s => s + 1);
                 }, 800);
+            };
+
+            const resetProcess = () => {
+                setUserData({ name: '', lastName: '', email: '', phone: '', role: '' });
+                setStep(0);
             };
 
             useEffect(() => {
@@ -114,117 +128,116 @@
                                     <Icon name="sparkles" size={20} />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 leading-none">Asistente Blindato</h2>
-                                    <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Conectado • Alta de Usuario</p>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 leading-none">Secretaría Digital</h2>
+                                    <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">AI Assistant • Alta de Usuario</p>
                                 </div>
                             </div>
                             <button 
-                                onClick={() => setIsMassive(!isMassive)}
-                                className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                                onClick={() => { setIsMassive(!isMassive); setStep(0); }}
+                                className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 hover:text-indigo-600 transition-all"
                             >
-                                {isMassive ? "Volver a individual" : "Ir a carga masiva"}
+                                {isMassive ? "Vía Chat" : "Carga Masiva"}
                             </button>
                         </header>
 
                         {/* AREA DE CHAT (SCROLLABLE) */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar pb-40">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar pb-48">
                             
-                            {/* Mensaje de Bienvenida */}
+                            {/* BIENVENIDA */}
                             <div className="bot-bubble animate-chat">
-                                <p>¡Hola! Soy tu asistente de gestión. Vamos a dar de alta a un nuevo usuario en el sistema. Es rápido y solo necesitamos los datos básicos.</p>
-                                <p className="mt-2 text-indigo-500 font-bold italic">¿Empezamos con su nombre?</p>
+                                <p>¡Hola! Vamos a dar de alta a una persona en Blindato. Solo necesito sus datos básicos para enviarle la invitación.</p>
+                                <p className="mt-2 text-indigo-500 font-bold italic text-xs uppercase tracking-tighter">¿Cuál es su nombre?</p>
                             </div>
 
-                            {/* Carga Masiva (Si aplica) */}
                             {isMassive && (
                                 <div className="bot-bubble animate-chat bg-indigo-50 border-indigo-100">
-                                    <h4 className="font-black uppercase text-[10px] mb-3 text-indigo-600">Importación de Cartera</h4>
-                                    <label className="w-full border-2 border-dashed border-indigo-200 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-indigo-50 transition-all group">
+                                    <h4 className="font-black uppercase text-[10px] mb-3 text-indigo-600">Importación Masiva</h4>
+                                    <label className="w-full border-2 border-dashed border-indigo-200 rounded-2xl p-12 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-indigo-50 transition-all group">
                                         <input type="file" className="hidden" />
                                         <Icon name="upload-cloud" size={40} className="text-indigo-300 group-hover:scale-110 transition-transform mb-4" />
-                                        <span className="text-[10px] font-black uppercase text-slate-400">Arrastra tu Excel o CSV aquí</span>
+                                        <span className="text-[10px] font-black uppercase text-slate-400">Suelta tu Excel o CSV aquí</span>
                                     </label>
                                 </div>
                             )}
 
-                            {/* FLUJO INDIVIDUAL CHAT */}
                             {!isMassive && (
                                 <React.Fragment>
-                                    {/* PASO 1: NOMBRE */}
+                                    {/* RESPUESTAS Y PREGUNTAS EN CASCADA */}
                                     {step >= 1 && <div className="user-bubble animate-chat">{userData.name}</div>}
-                                    {step === 1 && !isTyping && (
-                                        <div className="bot-bubble animate-chat italic">¿Y su apellido?</div>
-                                    )}
+                                    {step === 1 && !isTyping && <div className="bot-bubble animate-chat">¿Y su apellido?</div>}
 
-                                    {/* PASO 2: APELLIDO */}
                                     {step >= 2 && <div className="user-bubble animate-chat">{userData.lastName}</div>}
-                                    {step === 2 && !isTyping && (
-                                        <div className="bot-bubble animate-chat">
-                                            Perfecto. ¿Cuál es su correo electrónico? <br/>
-                                            <span className="text-[10px] opacity-50">Le enviaremos la invitación aquí para que complete su perfil.</span>
-                                        </div>
-                                    )}
+                                    {step === 2 && !isTyping && <div className="bot-bubble animate-chat">Perfecto. ¿A qué email enviamos la invitación?</div>}
 
-                                    {/* PASO 3: EMAIL */}
                                     {step >= 3 && <div className="user-bubble animate-chat">{userData.email}</div>}
-                                    {step === 3 && !isTyping && (
-                                        <div className="bot-bubble animate-chat">¿Y un número de teléfono / WhatsApp?</div>
-                                    )}
+                                    {step === 3 && !isTyping && <div className="bot-bubble animate-chat">¿A qué teléfono o WhatsApp podemos contactarlo?</div>}
 
-                                    {/* PASO 4: TELEFONO */}
                                     {step >= 4 && <div className="user-bubble animate-chat">{userData.phone}</div>}
-                                    {step === 4 && !isTyping && (
-                                        <div className="bot-bubble animate-chat">
-                                            Ya casi estamos. Por último, ¿Qué rol principal tendrá <strong>{userData.name}</strong>?
-                                        </div>
-                                    )}
+                                    {step === 4 && !isTyping && <div className="bot-bubble animate-chat">Genial. Por último, ¿Qué rol ocupará en Blindato?</div>}
 
-                                    {/* PASO 5: ROL (ELECCION) */}
+                                    {/* SELECCIÓN DE PERFIL DENTRO DEL CHAT */}
                                     {step >= 5 && <div className="user-bubble animate-chat uppercase tracking-widest">{userData.role}</div>}
                                     {step === 5 && !isTyping && (
-                                        <div className="flex flex-col gap-3 animate-chat max-w-[80%]">
-                                            {['Inquilino', 'Propietario', 'Administrador'].map(r => (
+                                        <div className="flex flex-col gap-3 animate-chat max-w-[85%]">
+                                            {[
+                                                {id: 'Inquilino', icon: 'user'},
+                                                {id: 'Propietario', icon: 'shield'},
+                                                {id: 'Administrador', icon: 'building-2'}
+                                            ].map(r => (
                                                 <button 
-                                                    key={r}
-                                                    onClick={() => { setUserData({...userData, role: r}); handleNext(); }}
-                                                    className="w-full p-5 bg-white border-2 border-slate-100 rounded-3xl text-left font-black text-slate-800 uppercase text-xs flex items-center justify-between hover:border-[#0055DD] hover:bg-blue-50 transition-all shadow-sm group"
+                                                    key={r.id}
+                                                    onClick={() => { setUserData({...userData, role: r.id}); handleNext(); }}
+                                                    className="btn-role"
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <Icon name={r === 'Inquilino' ? 'user' : r === 'Propietario' ? 'shield' : 'building-2'} className="text-slate-300 group-hover:text-[#0055DD]" />
-                                                        {r}
+                                                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-[#0055DD] transition-colors">
+                                                        <Icon name={r.icon} size={18}/>
                                                     </div>
-                                                    <Icon name="arrow-right" size={16} className="text-slate-200" />
+                                                    <span className="uppercase text-xs tracking-tighter">{r.id}</span>
                                                 </button>
                                             ))}
                                         </div>
                                     )}
 
-                                    {/* EXIT: INVITACION ENVIADA */}
-                                    {step >= 6 && (
+                                    {/* RESUMEN Y CONFIRMACIÓN */}
+                                    {step === 6 && !isTyping && (
+                                        <div className="bot-bubble animate-chat bg-slate-50 border-slate-200">
+                                            <p className="mb-4 font-bold text-slate-800 uppercase text-[10px] tracking-widest">Resumen de la Invitación</p>
+                                            <div className="space-y-3 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Nombre</span><span className="text-sm font-bold text-slate-700">{userData.name} {userData.lastName}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Email</span><span className="text-sm font-bold text-slate-700">{userData.email}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Teléfono</span><span className="text-sm font-bold text-slate-700">{userData.phone}</span></div>
+                                                <div className="flex justify-between items-center border-t pt-3"><span className="text-[10px] text-slate-400 uppercase font-black">Rol</span><span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{userData.role}</span></div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={handleNext} className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all">Confirmar y Enviar</button>
+                                                <button onClick={resetProcess} className="px-6 py-4 bg-white text-slate-400 border border-slate-200 rounded-xl font-black text-xs uppercase hover:text-red-500 active:scale-95 transition-all">Editar</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ÉXITO FINAL */}
+                                    {step >= 7 && (
                                         <div className="space-y-6">
                                             <div className="bot-bubble animate-chat bg-emerald-50 border-emerald-100">
                                                 <div className="flex items-center gap-3 text-emerald-600 mb-2">
                                                     <Icon name="check-circle" size={24} strokeWidth={3} />
                                                     <h4 className="font-black uppercase tracking-tighter text-lg">Invitación Enviada</h4>
                                                 </div>
-                                                <p className="text-emerald-700 font-medium leading-relaxed">
-                                                    Hemos enviado el acceso a <strong>{userData.email}</strong>. El usuario podrá realizar su biometría y completar sus datos desde la App.
-                                                </p>
+                                                <p className="text-emerald-700 font-medium">El usuario recibirá un link para validar su identidad y completar su perfil.</p>
                                             </div>
 
-                                            {/* OPCIONES FINALES (PEDIDAS) */}
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-chat delay-500 opacity-0 fill-mode-forwards" style={{animationDelay: '0.6s'}}>
+                                            <div className="grid grid-cols-3 gap-4 animate-chat" style={{animationDelay: '0.4s'}}>
                                                 <button onClick={() => setStep(0)} className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-indigo-600 transition-all shadow-sm">
                                                     <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><Icon name="user-plus" /></div>
-                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Otro Usuario</span>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nuevo Usuario</span>
                                                 </button>
                                                 <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-[#0055DD] transition-all shadow-sm">
                                                     <div className="w-12 h-12 bg-blue-50 text-[#0055DD] rounded-2xl flex items-center justify-center"><Icon name="building-2" /></div>
-                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Nueva Propiedad</span>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nueva Propiedad</span>
                                                 </button>
                                                 <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-emerald-600 transition-all shadow-sm">
                                                     <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center"><Icon name="file-text" /></div>
-                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Nuevo Contrato</span>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nuevo Contrato</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -232,9 +245,8 @@
                                 </React.Fragment>
                             )}
 
-                            {/* Bot Typing Indicator */}
                             {isTyping && (
-                                <div className="bot-bubble flex items-center gap-1.5 py-3 w-max">
+                                <div className="bot-bubble flex items-center gap-1.5 py-4 w-max">
                                     <div className="typing-dot"></div>
                                     <div className="typing-dot"></div>
                                     <div className="typing-dot"></div>
@@ -242,17 +254,17 @@
                             )}
                         </div>
 
-                        {/* AREA DE INPUT (CONTROLADA POR STEPS) */}
+                        {/* INPUT CONTEXTUAL (SOLO PASOS 0 A 4) */}
                         {step < 5 && !isMassive && (
-                            <footer className="p-10 border-t border-slate-50 bg-white">
+                            <footer className="p-10 border-t border-slate-50 bg-white/80 backdrop-blur-md sticky bottom-0 z-40">
                                 <div className="flex gap-4 max-w-2xl mx-auto">
                                     <input 
-                                        type={step === 3 ? "email" : "text"}
+                                        type={step === 2 ? "email" : "text"}
                                         placeholder={
-                                            step === 0 ? "Escribe el nombre..." :
-                                            step === 1 ? "Apellido..." :
-                                            step === 2 ? "Email..." :
-                                            step === 3 ? "Teléfono..." : "Escribe aquí..."
+                                            step === 0 ? "Escribe su Nombre..." :
+                                            step === 1 ? "Su Apellido..." :
+                                            step === 2 ? "Correo Electrónico..." :
+                                            step === 3 ? "Teléfono o WhatsApp..." : "Escribe aquí..."
                                         }
                                         value={
                                             step === 0 ? userData.name :
@@ -269,10 +281,11 @@
                                         }}
                                         className="input-chat"
                                         onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                                        autoFocus
                                     />
                                     <button 
                                         onClick={handleNext}
-                                        className="bg-indigo-600 text-white w-16 h-16 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all shrink-0"
+                                        className="bg-indigo-600 text-white w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all shrink-0"
                                     >
                                         <Icon name="send" />
                                     </button>
@@ -280,9 +293,9 @@
                             </footer>
                         )}
 
-                        {isMassive && (
+                        {isMassive && step < 7 && (
                              <footer className="p-10 border-t border-slate-50 bg-white flex justify-center">
-                                <button onClick={() => setStep(6)} className="bg-indigo-600 text-white px-10 py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-widest shadow-xl">Procesar Archivo Masivo</button>
+                                <button onClick={() => setStep(7)} className="bg-indigo-600 text-white px-10 py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-widest shadow-xl">Iniciar Carga de Cartera</button>
                              </footer>
                         )}
                     </main>
