@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blindato Admin - Alta de Propietario V1</title>
+    <title>Blindato Admin - Alta Usuario AI-Style</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -28,254 +28,270 @@
             color: #1e293b;
         }
 
-        .animate-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-chat { animation: chatIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes chatIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        .btn-method-select {
-            @apply flex flex-col items-center justify-center p-12 border-2 border-slate-100 rounded-[3rem] bg-white transition-all cursor-pointer;
-        }
-        .btn-method-select:hover {
-            @apply border-[#0055DD] shadow-2xl shadow-blue-100 -translate-y-1;
-        }
-        .btn-method-select.active {
-            @apply border-[#0055DD] bg-blue-50 ring-2 ring-[#0055DD];
+        .bot-bubble {
+            @apply bg-white border border-slate-100 p-5 rounded-tr-[2rem] rounded-br-[2rem] rounded-bl-[2rem] shadow-sm max-w-[80%] text-sm font-medium leading-relaxed;
         }
 
-        .input-pill {
-            @apply w-full bg-slate-50 border-2 border-transparent px-6 py-4 rounded-2xl text-sm font-bold focus:ring-0 focus:border-[#0055DD] focus:bg-white outline-none transition-all;
+        .user-bubble {
+            @apply bg-[#0055DD] text-white p-5 rounded-tl-[2rem] rounded-bl-[2rem] rounded-br-[2rem] shadow-lg max-w-[80%] text-sm font-bold ml-auto;
+        }
+
+        .input-chat {
+            @apply w-full bg-white border-2 border-slate-100 px-6 py-4 rounded-2xl text-base font-bold focus:ring-4 focus:ring-blue-50 focus:border-[#0055DD] outline-none transition-all;
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Estilo para simular barra lateral de Admin */
-        .sidebar {
-            background-color: #0A142F;
+        .sidebar { background-color: #0A142F; }
+
+        .typing-dot {
+            width: 4px; height: 4px; background: #94a3b8; border-radius: 50%;
+            animation: typing 1.4s infinite;
         }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         const Icon = ({ name, size = 20, className = "" }) => {
             useEffect(() => { window.lucide && window.lucide.createIcons(); }, [name, size, className]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
-        function OwnerOnboardingWeb() {
-            // ESTADOS: welcome, method_select, individual_form, bulk_upload, success
-            const [step, setStep] = useState('welcome');
-            const [isScanning, setIsScanning] = useState(false);
+        function App() {
+            // Pasos: 0:Bienvenida, 1:Nombre, 2:Apellido, 3:Email, 4:Telefono, 5:Rol, 6:Exito
+            const [step, setStep] = useState(0);
+            const [isMassive, setIsMassive] = useState(false);
+            const [userData, setUserData] = useState({ name: '', lastName: '', email: '', phone: '', role: '' });
+            const [isTyping, setIsTyping] = useState(false);
+            const scrollRef = useRef(null);
 
-            const handleFinish = () => {
-                setIsScanning(true);
+            const handleNext = (val) => {
+                setIsTyping(true);
                 setTimeout(() => {
-                    setIsScanning(false);
-                    setStep('success');
-                }, 1500);
+                    setIsTyping(false);
+                    setStep(s => s + 1);
+                }, 800);
             };
 
-            // --- BARRA LATERAL (CONSOLA) ---
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [step, isTyping]);
+
+            // --- BARRA LATERAL ---
             const Sidebar = () => (
-                <aside className="w-24 sidebar text-white flex flex-col items-center py-8 gap-10 border-r border-slate-800 h-screen fixed left-0 top-0">
+                <aside className="w-24 sidebar text-white flex flex-col items-center py-8 gap-10 border-r border-slate-800 h-screen fixed left-0 top-0 z-50">
                     <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg">B</div>
-                    <nav className="flex flex-col gap-6 text-slate-500">
-                        <div className="p-3 hover:text-indigo-400 cursor-pointer transition-colors"><Icon name="layout-grid" size={24} /></div>
-                        <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><Icon name="users" size={24} /></div>
-                        <div className="p-3 hover:text-indigo-400 cursor-pointer transition-colors"><Icon name="building" size={24} /></div>
-                        <div className="p-3 hover:text-indigo-400 cursor-pointer transition-colors"><Icon name="wallet" size={24} /></div>
+                    <nav className="flex flex-col gap-8 text-slate-500">
+                        <div className="p-3 hover:text-white cursor-pointer transition-colors"><Icon name="layout-grid" size={24} /></div>
+                        <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><Icon name="user-plus" size={24} /></div>
+                        <div className="p-3 hover:text-white cursor-pointer transition-colors"><Icon name="building" size={24} /></div>
+                        <div className="p-3 hover:text-white cursor-pointer transition-colors"><Icon name="file-text" size={24} /></div>
+                        <div className="p-3 hover:text-white cursor-pointer transition-colors"><Icon name="wallet" size={24} /></div>
                     </nav>
                 </aside>
             );
 
-            // --- VISTA 1: BIENVENIDA ---
-            const WelcomeView = () => (
-                <div className="flex-1 flex items-center justify-center p-12 animate-in text-center ml-24">
-                    <div className="max-w-2xl w-full bg-white p-16 rounded-[4rem] shadow-xl border border-slate-50">
-                        <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-[#0055DD] shadow-inner">
-                            <Icon name="user-plus" size={48} />
-                        </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4 italic">Gestión de Dueños</h1>
-                        <p className="text-slate-400 font-medium mb-12 px-10 leading-relaxed text-lg italic">
-                            Registra un nuevo propietario o importa tu cartera completa para activar sus liquidaciones automáticas.
-                        </p>
-                        <button onClick={() => setStep('method_select')} className="bg-[#0055DD] text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 active:scale-95 transition-all">
-                            Nueva Alta de Dueño
-                        </button>
-                    </div>
-                </div>
-            );
-
-            // --- VISTA 2: SELECCIÓN DE MÉTODO ---
-            const MethodSelectView = () => (
-                <div className="flex-1 flex items-center justify-center p-12 animate-in ml-24">
-                    <div className="max-w-5xl w-full">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Selecciona el método de carga</h2>
-                            <p className="text-slate-400 font-medium mt-3">Elección con carga mínima de datos.</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
-                            <div onClick={() => setStep('individual_form')} className="btn-method-select group">
-                                <div className="w-24 h-24 bg-blue-50 rounded-[2rem] flex items-center justify-center mb-8 text-[#0055DD] shadow-sm group-hover:scale-110 transition-transform"><Icon name="user" size={48} /></div>
-                                <span className="text-sm font-black uppercase tracking-widest text-slate-800">Alta Individual</span>
-                                <p className="text-[11px] mt-2 uppercase font-bold opacity-40">Similar a un contacto</p>
-                            </div>
-                            <div onClick={() => setStep('bulk_upload')} className="btn-method-select group">
-                                <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-8 text-slate-400 shadow-sm group-hover:scale-110 transition-transform"><Icon name="layers" size={48} /></div>
-                                <span className="text-sm font-black uppercase tracking-widest text-slate-800">Alta Masiva</span>
-                                <p className="text-[11px] mt-2 uppercase font-bold opacity-40">Importar CRM / Excel</p>
-                            </div>
-                        </div>
-                        <div className="mt-16 text-center">
-                            <button onClick={() => setStep('welcome')} className="text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:text-slate-900 transition-colors">
-                                <Icon name="arrow-left" size={14} /> Volver
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            // --- VISTA 3: FORMULARIO INDIVIDUAL (6 CAMPOS OBLIGATORIOS) ---
-            const IndividualFormView = () => (
-                <div className="flex-1 flex items-center justify-center p-12 animate-in ml-24">
-                    <div className="max-w-4xl w-full bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden">
-                        <div className="p-16">
-                            <header className="text-center mb-12">
-                                <h3 className="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">Ficha del Propietario</h3>
-                                <p className="text-slate-400 text-sm mt-3 font-medium italic">Todos los campos son requeridos para la validación fiscal.</p>
-                            </header>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 mb-16">
-                                {/* Columna 1 */}
-                                <div className="space-y-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Nombre</label>
-                                        <input type="text" placeholder="ej: Roberto Carlos" className="input-pill" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">DNI / Pasaporte</label>
-                                        <input type="number" placeholder="Sin puntos ni espacios" className="input-pill" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Correo Electrónico</label>
-                                        <input type="email" placeholder="ej: roberto@empresa.com" className="input-pill" />
-                                    </div>
-                                </div>
-                                {/* Columna 2 */}
-                                <div className="space-y-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Apellido</label>
-                                        <input type="text" placeholder="ej: Gomez" className="input-pill" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">CUIT / CUIL</label>
-                                        <div className="relative">
-                                            <input type="text" placeholder="20-xxxxxxxx-9" className="input-pill pr-24" />
-                                            <button className="absolute right-4 top-4 text-indigo-600 font-black text-[9px] uppercase border-2 border-indigo-50 px-3 py-1 rounded-xl bg-white hover:bg-indigo-50 transition-colors">Validar</button>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Celular (WhatsApp)</label>
-                                        <div className="relative">
-                                            <input type="tel" placeholder="+54 9 351 000-0000" className="input-pill" />
-                                            <div className="absolute right-5 top-5 text-emerald-500"><Icon name="message-circle" size={18} /></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-6 items-center">
-                                <button onClick={handleFinish} className="w-full max-w-md bg-[#0D1B4B] text-white py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl active:scale-95 transition-all">
-                                    Finalizar y Dar de Alta
-                                </button>
-                                <button onClick={() => setStep('method_select')} className="text-slate-300 font-black text-[10px] uppercase tracking-widest border-b border-transparent hover:border-slate-300">Cambiar a Carga Masiva</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            // --- VISTA 4: CARGA MASIVA ---
-            const BulkUploadView = () => (
-                <div className="flex-1 flex items-center justify-center p-12 animate-in ml-24">
-                    <div className="max-w-3xl w-full bg-white rounded-[4rem] shadow-2xl p-16 text-center border border-slate-100">
-                        <header className="mb-12">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Importación de Cartera</h3>
-                            <p className="text-slate-400 text-sm mt-3 font-medium">Procesa cientos de propietarios desde un solo archivo.</p>
-                        </header>
-                        
-                        <label className="border-4 border-dashed border-slate-100 rounded-[3rem] p-20 flex flex-col items-center justify-center cursor-pointer hover:border-[#0055DD] hover:bg-blue-50 transition-all group mb-10">
-                            <input type="file" className="hidden" />
-                            <Icon name="upload-cloud" size={72} className="text-slate-200 group-hover:text-[#0055DD] mb-8 transition-all group-hover:scale-110" />
-                            <span className="text-sm font-black uppercase text-slate-400 tracking-widest group-hover:text-slate-800">Arrastra tu archivo .CSV o .XLSX aquí</span>
-                        </label>
-
-                        <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 mb-12 flex items-center gap-4 text-left">
-                            <Icon name="info" className="text-indigo-600 shrink-0" size={24} />
-                            <p className="text-xs text-indigo-700 font-bold leading-relaxed">
-                                El sistema vinculará automáticamente los CUITs con Infoexperto. Descarga la <span className="underline cursor-pointer">plantilla estándar de Blindato</span> para asegurar el 100% de éxito.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col gap-6 items-center">
-                            <button onClick={handleFinish} className="w-full max-w-sm bg-[#0055DD] text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 active:scale-95 transition-all">
-                                Procesar Cartera
-                            </button>
-                            <button onClick={() => setStep('method_select')} className="text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver</button>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            // --- VISTA 5: ÉXITO ---
-            const SuccessView = () => (
-                <div className="flex-1 flex items-center justify-center p-12 animate-in ml-24">
-                    <div className="max-w-xl w-full bg-slate-900 rounded-[4rem] p-16 text-center text-white shadow-2xl relative overflow-hidden">
-                        <Icon name="shield-check" size={200} className="absolute right-[-40px] bottom-[-40px] opacity-5 text-indigo-500" />
-                        <div className="w-24 h-24 bg-emerald-500 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pop">
-                            <Icon name="check" size={48} strokeWidth={4} className="text-slate-900" />
-                        </div>
-                        <h2 className="text-4xl font-black tracking-tighter uppercase mb-4 italic">Alta Exitosa</h2>
-                        <p className="text-slate-400 font-medium mb-12 leading-relaxed">
-                            El propietario ha sido registrado y validado fiscalmente. Ya puedes vincular sus activos inmobiliarios.
-                        </p>
-                        <div className="flex flex-col gap-4">
-                            <button className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">
-                                Vincular Primera Propiedad
-                            </button>
-                            <button onClick={() => setStep('welcome')} className="w-full bg-white/10 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-white/20 hover:bg-white/20 transition-all">
-                                Volver al Panel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-
             return (
-                <div className="flex min-h-screen w-full relative overflow-hidden">
+                <div className="flex min-h-screen w-full relative overflow-hidden bg-[#F8FAFC]">
                     <Sidebar />
                     
-                    {step === 'welcome' && <WelcomeView />}
-                    {step === 'method_select' && <MethodSelectView />}
-                    {step === 'individual_form' && <IndividualFormView />}
-                    {step === 'bulk_upload' && <BulkUploadView />}
-                    {step === 'success' && <SuccessView />}
+                    <main className="flex-1 flex flex-col ml-24 h-screen max-w-4xl mx-auto relative border-x border-slate-100 bg-white shadow-sm">
+                        
+                        {/* HEADER CONSOLA */}
+                        <header className="p-6 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-40">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#0055DD] shadow-inner">
+                                    <Icon name="sparkles" size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 leading-none">Asistente Blindato</h2>
+                                    <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Conectado • Alta de Usuario</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setIsMassive(!isMassive)}
+                                className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                            >
+                                {isMassive ? "Volver a individual" : "Ir a carga masiva"}
+                            </button>
+                        </header>
 
-                    {/* OVERLAY DE PROCESAMIENTO */}
-                    {isScanning && (
-                        <div className="fixed inset-0 bg-white/90 backdrop-blur-md z-[500] flex flex-col items-center justify-center animate-in">
-                            <div className="w-16 h-16 border-4 border-[#0055DD] border-t-transparent rounded-full animate-spin mb-6"></div>
-                            <p className="text-xs font-black text-[#0055DD] uppercase tracking-[0.4em] animate-pulse italic">Auditoría Fiscal en curso...</p>
+                        {/* AREA DE CHAT (SCROLLABLE) */}
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar pb-40">
+                            
+                            {/* Mensaje de Bienvenida */}
+                            <div className="bot-bubble animate-chat">
+                                <p>¡Hola! Soy tu asistente de gestión. Vamos a dar de alta a un nuevo usuario en el sistema. Es rápido y solo necesitamos los datos básicos.</p>
+                                <p className="mt-2 text-indigo-500 font-bold italic">¿Empezamos con su nombre?</p>
+                            </div>
+
+                            {/* Carga Masiva (Si aplica) */}
+                            {isMassive && (
+                                <div className="bot-bubble animate-chat bg-indigo-50 border-indigo-100">
+                                    <h4 className="font-black uppercase text-[10px] mb-3 text-indigo-600">Importación de Cartera</h4>
+                                    <label className="w-full border-2 border-dashed border-indigo-200 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-indigo-50 transition-all group">
+                                        <input type="file" className="hidden" />
+                                        <Icon name="upload-cloud" size={40} className="text-indigo-300 group-hover:scale-110 transition-transform mb-4" />
+                                        <span className="text-[10px] font-black uppercase text-slate-400">Arrastra tu Excel o CSV aquí</span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {/* FLUJO INDIVIDUAL CHAT */}
+                            {!isMassive && (
+                                <React.Fragment>
+                                    {/* PASO 1: NOMBRE */}
+                                    {step >= 1 && <div className="user-bubble animate-chat">{userData.name}</div>}
+                                    {step === 1 && !isTyping && (
+                                        <div className="bot-bubble animate-chat italic">¿Y su apellido?</div>
+                                    )}
+
+                                    {/* PASO 2: APELLIDO */}
+                                    {step >= 2 && <div className="user-bubble animate-chat">{userData.lastName}</div>}
+                                    {step === 2 && !isTyping && (
+                                        <div className="bot-bubble animate-chat">
+                                            Perfecto. ¿Cuál es su correo electrónico? <br/>
+                                            <span className="text-[10px] opacity-50">Le enviaremos la invitación aquí para que complete su perfil.</span>
+                                        </div>
+                                    )}
+
+                                    {/* PASO 3: EMAIL */}
+                                    {step >= 3 && <div className="user-bubble animate-chat">{userData.email}</div>}
+                                    {step === 3 && !isTyping && (
+                                        <div className="bot-bubble animate-chat">¿Y un número de teléfono / WhatsApp?</div>
+                                    )}
+
+                                    {/* PASO 4: TELEFONO */}
+                                    {step >= 4 && <div className="user-bubble animate-chat">{userData.phone}</div>}
+                                    {step === 4 && !isTyping && (
+                                        <div className="bot-bubble animate-chat">
+                                            Ya casi estamos. Por último, ¿Qué rol principal tendrá <strong>{userData.name}</strong>?
+                                        </div>
+                                    )}
+
+                                    {/* PASO 5: ROL (ELECCION) */}
+                                    {step >= 5 && <div className="user-bubble animate-chat uppercase tracking-widest">{userData.role}</div>}
+                                    {step === 5 && !isTyping && (
+                                        <div className="flex flex-col gap-3 animate-chat max-w-[80%]">
+                                            {['Inquilino', 'Propietario', 'Administrador'].map(r => (
+                                                <button 
+                                                    key={r}
+                                                    onClick={() => { setUserData({...userData, role: r}); handleNext(); }}
+                                                    className="w-full p-5 bg-white border-2 border-slate-100 rounded-3xl text-left font-black text-slate-800 uppercase text-xs flex items-center justify-between hover:border-[#0055DD] hover:bg-blue-50 transition-all shadow-sm group"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <Icon name={r === 'Inquilino' ? 'user' : r === 'Propietario' ? 'shield' : 'building-2'} className="text-slate-300 group-hover:text-[#0055DD]" />
+                                                        {r}
+                                                    </div>
+                                                    <Icon name="arrow-right" size={16} className="text-slate-200" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* EXIT: INVITACION ENVIADA */}
+                                    {step >= 6 && (
+                                        <div className="space-y-6">
+                                            <div className="bot-bubble animate-chat bg-emerald-50 border-emerald-100">
+                                                <div className="flex items-center gap-3 text-emerald-600 mb-2">
+                                                    <Icon name="check-circle" size={24} strokeWidth={3} />
+                                                    <h4 className="font-black uppercase tracking-tighter text-lg">Invitación Enviada</h4>
+                                                </div>
+                                                <p className="text-emerald-700 font-medium leading-relaxed">
+                                                    Hemos enviado el acceso a <strong>{userData.email}</strong>. El usuario podrá realizar su biometría y completar sus datos desde la App.
+                                                </p>
+                                            </div>
+
+                                            {/* OPCIONES FINALES (PEDIDAS) */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-chat delay-500 opacity-0 fill-mode-forwards" style={{animationDelay: '0.6s'}}>
+                                                <button onClick={() => setStep(0)} className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-indigo-600 transition-all shadow-sm">
+                                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><Icon name="user-plus" /></div>
+                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Otro Usuario</span>
+                                                </button>
+                                                <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-[#0055DD] transition-all shadow-sm">
+                                                    <div className="w-12 h-12 bg-blue-50 text-[#0055DD] rounded-2xl flex items-center justify-center"><Icon name="building-2" /></div>
+                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Nueva Propiedad</span>
+                                                </button>
+                                                <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-emerald-600 transition-all shadow-sm">
+                                                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center"><Icon name="file-text" /></div>
+                                                    <span className="text-[10px] font-black uppercase text-slate-600 text-center leading-tight">Nuevo Contrato</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            )}
+
+                            {/* Bot Typing Indicator */}
+                            {isTyping && (
+                                <div className="bot-bubble flex items-center gap-1.5 py-3 w-max">
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {/* AREA DE INPUT (CONTROLADA POR STEPS) */}
+                        {step < 5 && !isMassive && (
+                            <footer className="p-10 border-t border-slate-50 bg-white">
+                                <div className="flex gap-4 max-w-2xl mx-auto">
+                                    <input 
+                                        type={step === 3 ? "email" : "text"}
+                                        placeholder={
+                                            step === 0 ? "Escribe el nombre..." :
+                                            step === 1 ? "Apellido..." :
+                                            step === 2 ? "Email..." :
+                                            step === 3 ? "Teléfono..." : "Escribe aquí..."
+                                        }
+                                        value={
+                                            step === 0 ? userData.name :
+                                            step === 1 ? userData.lastName :
+                                            step === 2 ? userData.email :
+                                            step === 3 ? userData.phone : ""
+                                        }
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            if(step === 0) setUserData({...userData, name: v});
+                                            else if(step === 1) setUserData({...userData, lastName: v});
+                                            else if(step === 2) setUserData({...userData, email: v});
+                                            else if(step === 3) setUserData({...userData, phone: v});
+                                        }}
+                                        className="input-chat"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                                    />
+                                    <button 
+                                        onClick={handleNext}
+                                        className="bg-indigo-600 text-white w-16 h-16 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Icon name="send" />
+                                    </button>
+                                </div>
+                            </footer>
+                        )}
+
+                        {isMassive && (
+                             <footer className="p-10 border-t border-slate-50 bg-white flex justify-center">
+                                <button onClick={() => setStep(6)} className="bg-indigo-600 text-white px-10 py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-widest shadow-xl">Procesar Archivo Masivo</button>
+                             </footer>
+                        )}
+                    </main>
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<OwnerOnboardingWeb />);
+        root.render(<App />);
     </script>
 </body>
 </html>
