@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre - Alta Propiedad con IA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-blue: #0055DD;
+            --brand-dark: #0A142F;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Botones de Selección */
+        .btn-method-select {
+            @apply flex flex-col items-center justify-center p-8 border-2 border-slate-100 rounded-[2.5rem] bg-white transition-all cursor-pointer ring-offset-4 ring-transparent;
+        }
+        .btn-method-select:hover {
+            @apply border-[#0055DD] shadow-2xl shadow-blue-100 -translate-y-1;
+        }
+
+        .input-pill {
+            @apply w-full bg-slate-50 border-2 border-transparent px-6 py-4 rounded-2xl text-sm font-bold focus:ring-0 focus:border-[#0055DD] focus:bg-white outline-none transition-all;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Chat Styles */
+        .animate-bubble { animation: bubbleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes bubbleIn { 
+            from { opacity: 0; transform: translateY(15px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        .bot-bubble {
+            @apply bg-white border border-slate-100 p-5 rounded-tr-[2rem] rounded-br-[2rem] rounded-bl-[2rem] shadow-sm max-w-[85%] text-sm font-medium leading-relaxed text-slate-700;
+        }
+
+        .user-bubble {
+            @apply bg-[#0055DD] text-white p-5 rounded-tl-[2rem] rounded-bl-[2rem] rounded-br-[2rem] shadow-lg max-w-[80%] text-sm font-bold ml-auto;
+        }
+
+        .typing-dot {
+            width: 6px; height: 6px; background: #94a3b8; border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+        .chat-action-btn {
+            @apply p-4 bg-white border-2 border-slate-100 rounded-2xl text-left font-bold text-slate-700 flex items-center gap-3 hover:border-[#0055DD] hover:bg-blue-50 transition-all active:scale-95;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { window.lucide && window.lucide.createIcons(); }, [name, size, className]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        // --- COMPONENTE CHAT: ALTA DE PROPIEDAD CON IA ---
+        const PropertyChatView = ({ onBack, onComplete }) => {
+            // Pasos del Chat
+            // 0: Pedir Dirección
+            // 1: Info Geolocalizada mostrada -> Pedir Extras
+            // 2: Resumen mostrado -> Confirmar/Editar
+            // 3: Pedir Estado (Preparación, Libre, Reservada, Administrada, Pausada)
+            // 4: Pedir Propietario (Nuevo/Existente/Saltar)
+            // 5: Buscador (Si Existente) o Nombre (Si Nuevo)
+            // 6: Email (Si Nuevo)
+            // 7: Telefono (Si Nuevo)
+            // 8: Éxito Final
+            const [step, setStep] = useState(0);
+            const [isTyping, setIsTyping] = useState(false);
+            const [inputValue, setInputValue] = useState("");
+            
+            const [propData, setPropData] = useState({
+                address: '',
+                extras: '',
+                status: '',
+                ownerType: '',
+                ownerSearch: '',
+                ownerName: '',
+                ownerEmail: '',
+                ownerPhone: ''
+            });
+
+            const scrollRef = useRef(null);
+
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [step, isTyping, propData]);
+
+            const advanceStep = (nextStepOverride) => {
+                setIsTyping(true);
+                setTimeout(() => {
+                    setIsTyping(false);
+                    setStep(prev => nextStepOverride !== undefined ? nextStepOverride : prev + 1);
+                }, 1000);
+            };
+
+            const handleSend = () => {
+                if (!inputValue.trim()) return;
+                const val = inputValue.trim();
+                setInputValue("");
+
+                if (step === 0) {
+                    setPropData(p => ({ ...p, address: val }));
+                    advanceStep();
+                } else if (step === 1) {
+                    setPropData(p => ({ ...p, extras: val }));
+                    advanceStep();
+                } else if (step === 5) {
+                    if (propData.ownerType === 'existente') {
+                        setPropData(p => ({ ...p, ownerSearch: val }));
+                        advanceStep(8); // Fin si es existente
+                    } else {
+                        setPropData(p => ({ ...p, ownerName: val }));
+                        advanceStep(6);
+                    }
+                } else if (step === 6) {
+                    setPropData(p => ({ ...p, ownerEmail: val }));
+                    advanceStep(7);
+                } else if (step === 7) {
+                    setPropData(p => ({ ...p, ownerPhone: val }));
+                    advanceStep(8); // Fin si es nuevo
+                }
+            };
+
+            const handleButton = (action, val) => {
+                if (action === 'skip_extras') {
+                    setPropData(p => ({ ...p, extras: 'Ninguno adicional' }));
+                    advanceStep(2);
+                } else if (action === 'confirm') {
+                    advanceStep(3);
+                } else if (action === 'edit') {
+                    setStep(0);
+                    setPropData({ address: '', extras: '', status: '', ownerType: '', ownerSearch: '', ownerName: '', ownerEmail: '', ownerPhone: '' });
+                } else if (action === 'status') {
+                    setPropData(p => ({ ...p, status: val }));
+                    advanceStep(4);
+                } else if (action === 'owner_type') {
+                    setPropData(p => ({ ...p, ownerType: val }));
+                    if (val === 'saltar') advanceStep(8);
+                    else advanceStep(5);
+                }
+            };
+
+            const showInput = (step === 0 || step === 1 || step === 5 || step === 6 || step === 7) && !isTyping;
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-3xl w-full bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[85vh]">
+                        
+                        {/* Header Chat */}
+                        <header className="p-6 border-b border-slate-50 flex justify-between items-center bg-white z-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={onBack} className="p-2 bg-slate-50 rounded-full text-slate-400 hover:bg-slate-100 transition-colors">
+                                    <Icon name="arrow-left" size={20} />
+                                </button>
+                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0055DD]">
+                                    <Icon name="sparkles" size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 leading-none">Asistente DptoLibre</h2>
+                                    <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Carga Inteligente de Activo</p>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Contenedor de Mensajes */}
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/50 no-scrollbar">
+                            
+                            {/* PASO 0 */}
+                            <div className="bot-bubble animate-bubble">
+                                <p>¡Hola! Vamos a dar de alta una nueva propiedad en tu cartera.</p>
+                                <p className="mt-2 text-[#0055DD] font-bold italic">¿Cuál es la dirección exacta del inmueble?</p>
+                            </div>
+
+                            {/* PASO 1 */}
+                            {step >= 1 && <div className="user-bubble animate-bubble">{propData.address}</div>}
+                            {step === 1 && !isTyping && (
+                                <div className="bot-bubble animate-bubble space-y-4">
+                                    <p>¡Excelente! Encontré la ubicación y recopilé estos datos automáticamente:</p>
+                                    
+                                    {/* Simulated Fetched Card */}
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-72">
+                                        <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
+                                            <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500&q=80" alt="Propiedad" className="w-full h-full object-cover" />
+                                            <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-md font-bold uppercase tracking-wider">
+                                                <Icon name="map-pin" size={10} /> Geolocalizado
+                                            </div>
+                                        </div>
+                                        <p className="font-black text-slate-800 text-sm leading-tight">{propData.address}</p>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Departamento • 3 Ambientes • 1 Baño</p>
+                                    </div>
+
+                                    <p className="font-bold text-slate-700 pt-2">¿Hay algo más que quieras agregar sobre las características?</p>
+                                    <p className="text-[10px] text-slate-400 italic">Ej: "Tiene cochera techada", "Edificio con SUM y pileta", "Patio interno".</p>
+                                    
+                                    <button onClick={() => handleButton('skip_extras')} className="mt-2 w-full py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs uppercase hover:bg-slate-100 transition-colors">
+                                        No, continuar así
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* PASO 2 */}
+                            {step >= 2 && <div className="user-bubble animate-bubble">{propData.extras}</div>}
+                            {step === 2 && !isTyping && (
+                                <div className="bot-bubble animate-bubble space-y-4">
+                                    <p>¡Anotado! Aquí tienes el resumen final del activo:</p>
+                                    
+                                    {/* Final Summary Card */}
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-80">
+                                        <div className="flex gap-2 mb-3">
+                                            <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300&q=80" className="w-1/2 rounded-xl object-cover aspect-square" />
+                                            <img src="https://images.unsplash.com/photo-1502672260266-1c1c24240f38?w=300&q=80" className="w-1/2 rounded-xl object-cover aspect-square" />
+                                        </div>
+                                        <h4 className="font-black text-slate-800 text-sm">{propData.address}</h4>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase mb-3 tracking-widest">Depto • 3 Ambientes • 1 Baño</p>
+                                        <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-xl font-medium leading-relaxed">
+                                            <span className="font-black uppercase tracking-tighter block mb-1">Características extra:</span> 
+                                            {propData.extras}
+                                        </div>
+                                    </div>
+
+                                    <p className="font-bold text-slate-700 pt-2">¿Confirmamos la carga o prefieres editar los datos?</p>
+                                    <div className="flex gap-3 mt-2">
+                                        <button onClick={() => handleButton('confirm')} className="flex-1 bg-[#0055DD] text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-100 hover:bg-blue-700 transition-colors">Confirmar</button>
+                                        <button onClick={() => handleButton('edit')} className="flex-1 bg-white border border-slate-200 text-slate-500 py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-50 transition-colors">Editar</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PASO 3 */}
+                            {step >= 3 && <div className="user-bubble animate-bubble">Propiedad Confirmada</div>}
+                            {step === 3 && !isTyping && (
+                                <div className="bot-bubble animate-bubble space-y-4">
+                                    <p>Propiedad registrada en el sistema. ¿En qué estado se encuentra actualmente?</p>
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        {['Preparación', 'Libre', 'Reservada', 'Administrada', 'Pausada'].map(st => (
+                                            <button key={st} onClick={() => handleButton('status', st)} className="chat-action-btn justify-between group">
+                                                <span className="uppercase tracking-widest text-xs">{st}</span>
+                                                <Icon name="chevron-right" size={16} className="text-slate-300 group-hover:text-[#0055DD]" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PASO 4 */}
+                            {step >= 4 && <div className="user-bubble animate-bubble">{propData.status}</div>}
+                            {step === 4 && !isTyping && (
+                                <div className="bot-bubble animate-bubble space-y-4">
+                                    <p>Para el estado <strong>{propData.status.toUpperCase()}</strong>, la asociación de un propietario es <span className="font-black underline text-red-500">{propData.status === 'Preparación' ? 'OPCIONAL' : 'OBLIGATORIA'}</span>.</p>
+                                    
+                                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex gap-3 text-amber-800">
+                                        <Icon name="alert-triangle" className="shrink-0" size={20} />
+                                        <p className="text-[10px] font-bold leading-relaxed uppercase tracking-wider">
+                                            Importante: Se le informará por mensaje (WhatsApp/Mail) al propietario que ha sido asociado a esta unidad para que pueda verla en su App.
+                                        </p>
+                                    </div>
+
+                                    <p className="font-bold text-slate-700">¿Querés asociar un dueño nuevo o existente?</p>
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        <button onClick={() => handleButton('owner_type', 'existente')} className="chat-action-btn">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center"><Icon name="search" size={14}/></div>
+                                            <span className="uppercase text-xs tracking-widest">Buscar dueño existente</span>
+                                        </button>
+                                        <button onClick={() => handleButton('owner_type', 'nuevo')} className="chat-action-btn">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><Icon name="user-plus" size={14}/></div>
+                                            <span className="uppercase text-xs tracking-widest">Crear dueño nuevo</span>
+                                        </button>
+                                        {propData.status === 'Preparación' && (
+                                            <button onClick={() => handleButton('owner_type', 'saltar')} className="w-full py-3 mt-2 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs uppercase hover:bg-slate-100 transition-colors">
+                                                Saltar este paso por ahora
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PASO 5 */}
+                            {step >= 5 && propData.ownerType !== 'saltar' && (
+                                <div className="user-bubble animate-bubble">
+                                    {propData.ownerType === 'existente' ? 'Asociar dueño existente' : 'Crear nuevo dueño'}
+                                </div>
+                            )}
+                            {step === 5 && !isTyping && propData.ownerType === 'existente' && (
+                                <div className="bot-bubble animate-bubble">
+                                    <p className="font-bold text-[#0055DD]">Búsqueda en base de datos:</p>
+                                    <p className="mt-1 text-sm text-slate-600">Por favor, ingresá el Nombre, Apellido, DNI, Email o Celular del propietario para buscarlo.</p>
+                                </div>
+                            )}
+                            {step === 5 && !isTyping && propData.ownerType === 'nuevo' && (
+                                <div className="bot-bubble animate-bubble">
+                                    <p className="font-bold text-[#0055DD]">Alta de Contacto:</p>
+                                    <p className="mt-1 text-sm text-slate-600">Para crear el perfil, ingresá primero el <strong>Nombre y Apellido</strong> del dueño.</p>
+                                </div>
+                            )}
+
+                            {/* PASOS 6, 7, 8 (Flujo Nuevo Dueño y Existente) */}
+                            {step >= 6 && propData.ownerType === 'existente' && <div className="user-bubble animate-bubble">{propData.ownerSearch}</div>}
+                            {step >= 6 && propData.ownerType === 'nuevo' && <div className="user-bubble animate-bubble">{propData.ownerName}</div>}
+                            
+                            {step === 6 && !isTyping && propData.ownerType === 'nuevo' && (
+                                <div className="bot-bubble animate-bubble">Perfecto. Ahora ingresá su <strong>Correo Electrónico</strong> para enviarle la notificación de asociación.</div>
+                            )}
+
+                            {step >= 7 && propData.ownerType === 'nuevo' && <div className="user-bubble animate-bubble">{propData.ownerEmail}</div>}
+                            
+                            {step === 7 && !isTyping && propData.ownerType === 'nuevo' && (
+                                <div className="bot-bubble animate-bubble">Y por último, su <strong>Celular (WhatsApp)</strong>.</div>
+                            )}
+
+                            {step >= 8 && propData.ownerType === 'nuevo' && <div className="user-bubble animate-bubble">{propData.ownerPhone}</div>}
+
+                            {/* PASO FINAL (8 si existente/saltar, 8 si nuevo terminado) */}
+                            {step === 8 && !isTyping && (
+                                <div className="bot-bubble animate-bubble border-emerald-200 bg-emerald-50">
+                                    <div className="flex items-center gap-3 mb-3 text-emerald-600">
+                                        <Icon name="check-circle" size={28} />
+                                        <h3 className="font-black uppercase text-lg tracking-tighter">¡Propiedad Cargada!</h3>
+                                    </div>
+                                    <p className="text-emerald-800 font-medium mb-6">
+                                        {propData.ownerType === 'saltar' 
+                                            ? "La propiedad quedó registrada en estado de Preparación sin dueño asignado."
+                                            : "La propiedad ha sido registrada y el dueño ha sido asociado y notificado exitosamente."}
+                                    </p>
+                                    
+                                    <p className="text-[10px] font-black uppercase text-emerald-700 tracking-widest mb-3">¿Qué quieres hacer ahora?</p>
+                                    <div className="flex flex-col gap-3">
+                                        <button onClick={() => {setStep(0); setPropData({ address: '', extras: '', status: '', ownerType: '', ownerSearch: '', ownerName: '', ownerEmail: '', ownerPhone: '' });}} className="p-4 bg-white border border-emerald-200 rounded-xl text-emerald-700 font-black text-xs uppercase flex items-center justify-between hover:bg-emerald-100 transition-colors">
+                                            <span>Agregar otra propiedad</span> <Icon name="plus-circle" size={16} />
+                                        </button>
+                                        <button onClick={onComplete} className="p-4 bg-[#0055DD] text-white rounded-xl font-black text-xs uppercase flex items-center justify-between shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                                            <span>Asociar a un Contrato</span> <Icon name="file-text" size={16} />
+                                        </button>
+                                        <button onClick={onComplete} className="p-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-black text-xs uppercase flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                            <span>Alta de Inquilino / Usuario</span> <Icon name="user-plus" size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Indicador Typings */}
+                            {isTyping && (
+                                <div className="bot-bubble flex items-center gap-1.5 py-4 w-max">
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input Footer */}
+                        {showInput && (
+                            <footer className="p-6 border-t border-slate-100 bg-white">
+                                <div className="flex gap-4 items-center">
+                                    <input 
+                                        type="text" 
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                        placeholder={
+                                            step === 0 ? "Escribe la dirección exacta..." :
+                                            step === 1 ? "Ej: cochera, pileta, seguridad..." :
+                                            step === 5 && propData.ownerType === 'existente' ? "Nombre, DNI, Email o Celular..." :
+                                            step === 5 && propData.ownerType === 'nuevo' ? "Nombre y Apellido completo..." :
+                                            step === 6 ? "Correo electrónico del dueño..." :
+                                            "Teléfono del dueño..."
+                                        }
+                                        className="flex-1 bg-slate-50 border-none px-6 py-5 rounded-[2rem] text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:bg-white outline-none transition-all shadow-inner"
+                                        autoFocus
+                                    />
+                                    <button 
+                                        onClick={handleSend}
+                                        className="w-16 h-16 bg-[#0055DD] text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Icon name="send" size={24} />
+                                    </button>
+                                </div>
+                            </footer>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+
+        function DptoLibreOnboarding() {
+            // ESTADOS: welcome, method_select, property_chat, bulk_upload, link_import, qr_scan, dashboard
+            const [step, setStep] = useState('welcome');
+
+            // --- VISTA 1: BIENVENIDA ---
+            const WelcomeView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-xl w-full text-center">
+                        <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-[#0055DD] shadow-inner">
+                            <Icon name="building-2" size={48} />
+                        </div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4 italic">¡Hola Rodrigo!<br/>Empecemos tu cartera</h1>
+                        <p className="text-slate-400 font-medium mb-12 px-10 leading-relaxed text-lg italic">
+                            Sube tu primera propiedad para activar el blindaje. Todo el proceso te tomará menos de 3 minutos gracias a nuestra IA.
+                        </p>
+                        <button onClick={() => setStep('method_select')} className="bg-[#0055DD] text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 active:scale-95 transition-all">
+                            Cargar Mi Primer Activo
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 2: SELECCIÓN DE MÉTODO ---
+            const MethodSelectView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-5xl w-full">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter">¿Cómo quieres cargar tus datos?</h2>
+                            <p className="text-slate-400 font-medium mt-3">Selecciona una opción para continuar.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div onClick={() => setStep('property_chat')} className="btn-method-select group">
+                                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#0055DD] group-hover:scale-110 transition-transform"><Icon name="sparkles" size={32} /></div>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-800">Chat IA</span>
+                                <p className="text-[9px] mt-2 uppercase font-bold opacity-40">Asistente Virtual</p>
+                            </div>
+                            <div onClick={() => setStep('bulk_upload')} className="btn-method-select group">
+                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 text-slate-400 group-hover:scale-110 transition-transform"><Icon name="file-spreadsheet" size={32} /></div>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-800">Carga Masiva</span>
+                                <p className="text-[9px] mt-2 uppercase font-bold opacity-40">Excel / CRM</p>
+                            </div>
+                            <div onClick={() => setStep('link_import')} className="btn-method-select group">
+                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 text-slate-400 group-hover:scale-110 transition-transform"><Icon name="link" size={32} /></div>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-800">Importar Link</span>
+                                <p className="text-[9px] mt-2 uppercase font-bold opacity-40">Portales</p>
+                            </div>
+                            <div onClick={() => setStep('qr_scan')} className="btn-method-select group">
+                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 text-slate-400 group-hover:scale-110 transition-transform"><Icon name="qr-code" size={32} /></div>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-800">Carga por QR</span>
+                                <p className="text-[9px] mt-2 uppercase font-bold opacity-40">Archivo / PC</p>
+                            </div>
+                        </div>
+                        <div className="mt-16 text-center">
+                            <button onClick={() => setStep('welcome')} className="text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:text-slate-900 transition-colors">
+                                <Icon name="arrow-left" size={14} /> Volver atrás
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // --- VISTAS RESTANTES (Bulk, Link, QR, Dashboard simulados rápidos) ---
+            const QrScanView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl p-12 text-center border border-slate-100">
+                        <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-4 italic">Vincular por QR</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed px-10 italic">Si tienes el código QR de un cliente o contrato, súbelo como imagen o usa la cámara.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                            <label className="border-2 border-dashed border-slate-200 rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0055DD] hover:bg-blue-50 transition-all group">
+                                <input type="file" className="hidden" />
+                                <Icon name="image" size={40} className="mb-4 text-slate-300 group-hover:text-[#0055DD]" />
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Cargar Archivo</span>
+                            </label>
+                            <div onClick={() => alert("Activando cámara...")} className="border-2 border-slate-50 bg-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all group">
+                                <Icon name="camera" size={40} className="mb-4 text-slate-300 group-hover:text-slate-900" />
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Usar Cámara PC</span>
+                            </div>
+                        </div>
+                        <button onClick={() => setStep('dashboard')} className="w-full bg-[#0D1B4B] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Finalizar Vinculación</button>
+                        <button onClick={() => setStep('method_select')} className="mt-8 text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver a opciones</button>
+                    </div>
+                </div>
+            );
+
+            const BulkUploadView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl p-12 text-center border border-slate-100">
+                        <Icon name="file-spreadsheet" size={64} className="text-[#0055DD] mx-auto mb-8" />
+                        <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-4">Carga Masiva</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-12">Sube tu archivo .CSV o .XLSX con el formato Blindato.</p>
+                        <button onClick={() => setStep('dashboard')} className="w-full bg-[#0055DD] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Procesar Archivo</button>
+                        <button onClick={() => setStep('method_select')} className="mt-8 text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver</button>
+                    </div>
+                </div>
+            );
+
+            const LinkImportView = () => (
+                <div className="min-h-screen flex items-center justify-center p-6 animate-in">
+                    <div className="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl p-12 text-center border border-slate-100">
+                        <Icon name="rocket" size={64} className="text-[#0055DD] mx-auto mb-8" />
+                        <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-4 italic">Importar Publicación</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed px-10">Pega el link de Zonaprop o Argenprop y extraeremos los datos por ti.</p>
+                        <input type="text" placeholder="https://www.zonaprop.com.ar/..." className="input-pill mb-8" />
+                        <button onClick={() => setStep('dashboard')} className="w-full bg-[#0055DD] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Extraer Información</button>
+                        <button onClick={() => setStep('method_select')} className="mt-8 text-slate-300 font-black text-[10px] uppercase tracking-widest">Volver</button>
+                    </div>
+                </div>
+            );
+
+            const DashboardView = () => (
+                <div className="flex h-screen w-full bg-slate-900 text-white animate-in items-center justify-center flex-col gap-10">
+                    <div className="w-32 h-32 bg-emerald-500 rounded-[3rem] flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.3)] animate-pulse">
+                        <Icon name="check" size={64} strokeWidth={4} />
+                    </div>
+                    <div className="text-center">
+                        <h2 className="text-4xl font-black tracking-tighter uppercase mb-4 italic">Gestión Exitosa</h2>
+                        <p className="text-slate-400 font-medium max-w-sm mx-auto">Ya puedes visualizar la propiedad, contrato o inquilino en tu panel.</p>
+                    </div>
+                    <button onClick={() => setStep('welcome')} className="bg-white/10 text-white px-10 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] border border-white/10 hover:bg-white/20 transition-all">Ver Mi Cartera</button>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen w-full relative">
+                    {step === 'welcome' && <WelcomeView />}
+                    {step === 'method_select' && <MethodSelectView />}
+                    {step === 'property_chat' && <PropertyChatView onBack={() => setStep('method_select')} onComplete={() => setStep('dashboard')} />}
+                    {step === 'bulk_upload' && <BulkUploadView />}
+                    {step === 'link_import' && <LinkImportView />}
+                    {step === 'qr_scan' && <QrScanView />}
+                    {step === 'dashboard' && <DashboardView />}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DptoLibreOnboarding />);
+    </script>
+</body>
+</html>
