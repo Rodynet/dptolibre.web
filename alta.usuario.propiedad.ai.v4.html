@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blindato Admin - Alta Usuario AI V4.0</title>
+    <title>Blindato Admin - Alta Usuario AI V5.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -98,6 +98,7 @@
                50: Propiedad Nueva / Existente / Saltar
                51: Búsqueda de propiedad
                52: Resultados propiedad
+               53-56: (NUEVO) Flujo Alta Propiedad Conversacional
                --- Si Inquilino ---
                60: Asociar Contrato o Solo Invitar
                61: Contrato Nuevo o Existente
@@ -121,6 +122,8 @@
                 propChoice: '', 
                 searchTerm: '', 
                 linkedProp: null,
+                newPropAddress: '',
+                newPropExtras: '',
                 inqChoice: '',
                 inqContractType: '',
                 contractSearchTerm: '',
@@ -154,11 +157,12 @@
                 else typeAndGo(80); // Administrador va directo al resumen
             };
 
-            // --- LÓGICA DUEÑO ---
+            // --- LÓGICA DUEÑO Y PROPIEDAD ---
             const handlePropChoice = (choice) => {
                 setUserData({ ...userData, propChoice: choice });
-                if (choice === 'nueva' || choice === 'saltar') typeAndGo(80);
-                else typeAndGo(51);
+                if (choice === 'nueva') typeAndGo(53); // Inicia Mago de Propiedad
+                else if (choice === 'existente') typeAndGo(51); // Busca en Base
+                else typeAndGo(80); // Salta y va a resumen
             };
 
             const executePropSearch = () => {
@@ -178,6 +182,18 @@
             const selectProperty = (prop) => {
                 setUserData({ ...userData, linkedProp: prop });
                 typeAndGo(80);
+            };
+
+            // Helpers Flujo Nueva Propiedad (Paso 53 al 56)
+            const submitNewPropAddress = () => {
+                if (!userData.newPropAddress.trim()) return;
+                typeAndGo(54, 1500); // Simulamos un delay más largo de "Geolocalización"
+            };
+
+            const submitNewPropExtras = () => {
+                const val = userData.newPropExtras.trim() || 'Sin extras adicionales';
+                setUserData(prev => ({ ...prev, newPropExtras: val }));
+                typeAndGo(55);
             };
 
             // --- LÓGICA INQUILINO ---
@@ -246,7 +262,7 @@
             );
 
             // Control de visibilidad del input inferior
-            const showInput = (step >= 0 && step <= 3) || step === 51 || step === 52 || step === 62 || step === 63;
+            const showInput = (step >= 0 && step <= 3) || step === 51 || step === 52 || step === 53 || step === 54 || step === 62 || step === 63;
 
             return (
                 <div className="flex min-h-screen w-full relative overflow-hidden bg-[#F8FAFC]">
@@ -316,7 +332,7 @@
 
                                     {step >= 5 && <div className="user-bubble animate-bubble uppercase tracking-widest">{userData.role}</div>}
 
-                                    {/* --- RAMA PROPIETARIO --- */}
+                                    {/* --- RAMA PROPIETARIO: DECISIÓN --- */}
                                     {step === 50 && !isTyping && (
                                         <div className="bot-bubble animate-bubble">
                                             <p>¡Entendido! Podemos asociar a este propietario a una de sus propiedades ahora mismo o hacerlo más tarde.</p>
@@ -329,18 +345,18 @@
                                         </div>
                                     )}
 
+                                    {/* MUESTRA DECISIÓN DE PROPIEDAD */}
                                     {step >= 51 && userData.propChoice === 'existente' && <div className="user-bubble animate-bubble uppercase tracking-widest">Propiedad Existente</div>}
-                                    {step >= 51 && userData.propChoice === 'nueva' && <div className="user-bubble animate-bubble uppercase tracking-widest">Propiedad Nueva</div>}
+                                    {step >= 51 && userData.propChoice === 'nueva' && <div className="user-bubble animate-bubble uppercase tracking-widest">Crear Nueva Propiedad</div>}
                                     {step >= 51 && userData.propChoice === 'saltar' && <div className="user-bubble animate-bubble uppercase tracking-widest">Omitir por ahora</div>}
 
+                                    {/* --- RAMA PROPIEDAD EXISTENTE --- */}
                                     {step === 51 && !isTyping && (
                                         <div className="bot-bubble animate-bubble italic text-indigo-700">
                                             Por favor, ingresá la <strong>dirección o barrio</strong> para buscar la propiedad.
                                         </div>
                                     )}
-
                                     {step >= 52 && userData.searchTerm && <div className="user-bubble animate-bubble">{userData.searchTerm}</div>}
-                                    
                                     {step === 52 && !isTyping && (
                                         <div className="bot-bubble animate-bubble">
                                             {searchResults.length === 0 ? (
@@ -359,6 +375,64 @@
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {/* --- NUEVA RAMA: CREACIÓN DE PROPIEDAD (PASOS 53-56) --- */}
+                                    {step === 53 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble italic text-indigo-700">
+                                            Por favor, ingresá la <strong>dirección exacta</strong> del nuevo inmueble (Ej: Caseros 1230, Córdoba).
+                                        </div>
+                                    )}
+                                    {step >= 54 && userData.newPropAddress && <div className="user-bubble animate-bubble">{userData.newPropAddress}</div>}
+                                    
+                                    {step === 54 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble space-y-4">
+                                            <p>¡Excelente! Encontré la ubicación y recopilé estos datos automáticamente mediante Google Maps:</p>
+                                            
+                                            {/* Mock Card Geolocalizada */}
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-72">
+                                                <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
+                                                    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500&q=80" alt="Propiedad" className="w-full h-full object-cover" />
+                                                    <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-md font-bold uppercase tracking-wider">
+                                                        <Icon name="map-pin" size={10} /> Geolocalizado
+                                                    </div>
+                                                </div>
+                                                <p className="font-black text-slate-800 text-sm leading-tight">{userData.newPropAddress}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Departamento • 3 Amb. • 1 Baño</p>
+                                            </div>
+
+                                            <p className="font-bold text-slate-700 pt-2">¿Hay algo más que quieras agregar sobre las características?</p>
+                                            <p className="text-[10px] text-slate-400 italic">Ej: "Tiene cochera techada", "Edificio con SUM".</p>
+                                            
+                                            <button onClick={() => { setUserData({...userData, newPropExtras: 'Sin extras'}); typeAndGo(55); }} className="mt-2 w-full py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs uppercase hover:bg-slate-100 transition-colors">
+                                                No, continuar así
+                                            </button>
+                                        </div>
+                                    )}
+                                    {step >= 55 && userData.newPropExtras && <div className="user-bubble animate-bubble">{userData.newPropExtras}</div>}
+
+                                    {step === 55 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble space-y-4">
+                                            <p>¡Anotado! Aquí tienes el resumen de la propiedad a asociar:</p>
+                                            
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-80">
+                                                <div className="flex gap-2 mb-3">
+                                                    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300&q=80" className="w-1/2 rounded-xl object-cover aspect-square" />
+                                                    <img src="https://images.unsplash.com/photo-1502672260266-1c1c24240f38?w=300&q=80" className="w-1/2 rounded-xl object-cover aspect-square" />
+                                                </div>
+                                                <h4 className="font-black text-slate-800 text-sm">{userData.newPropAddress}</h4>
+                                                <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-xl font-medium leading-relaxed mt-2">
+                                                    <span className="font-black uppercase tracking-tighter block mb-1">Características extra:</span> 
+                                                    {userData.newPropExtras}
+                                                </div>
+                                            </div>
+
+                                            <p className="font-bold text-slate-700 pt-2">¿Confirmamos la creación de esta propiedad?</p>
+                                            <div className="flex gap-3 mt-2">
+                                                <button onClick={() => typeAndGo(80)} className="flex-1 bg-[#0055DD] text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-100 hover:bg-blue-700 transition-colors">Confirmar Activo</button>
+                                                <button onClick={() => setStep(53)} className="flex-1 bg-white border border-slate-200 text-slate-500 py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-50 transition-colors">Editar</button>
+                                            </div>
                                         </div>
                                     )}
 
@@ -419,7 +493,7 @@
                                         </div>
                                     )}
 
-                                    {/* --- RESUMEN FINAL --- */}
+                                    {/* --- RESUMEN FINAL (PASO 80) --- */}
                                     {step === 80 && !isTyping && (
                                         <div className="bot-bubble animate-bubble bg-slate-50 border-slate-200">
                                             <div className="flex items-center gap-2 mb-4 text-[#0055DD]">
@@ -430,11 +504,14 @@
                                                 <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Nombre</span><span className="text-sm font-bold text-slate-700">{userData.name} {userData.lastName}</span></div>
                                                 <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Email</span><span className="text-sm font-bold text-slate-700">{userData.email}</span></div>
                                                 <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">WhatsApp</span><span className="text-sm font-bold text-slate-700">{userData.phone}</span></div>
-                                                <div className="flex justify-between items-center border-t border-slate-50 pt-3"><span className="text-[10px] text-slate-400 uppercase font-black">Rol</span><span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{userData.role}</span></div>
+                                                <div className="flex justify-between items-center border-t border-slate-50 pt-3"><span className="text-[10px] text-slate-400 uppercase font-black">Perfil</span><span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{userData.role}</span></div>
                                                 
                                                 {/* Datos Condicionales */}
                                                 {userData.role === 'Propietario' && userData.propChoice === 'nueva' && (
-                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Acción Post-Alta</span><span className="text-[10px] font-black text-emerald-600 uppercase">Alta de Propiedad</span></div>
+                                                    <>
+                                                        <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Propiedad Asoc.</span><span className="text-[10px] font-black text-slate-800 uppercase text-right max-w-[150px] truncate">{userData.newPropAddress}</span></div>
+                                                        <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Acción Post-Alta</span><span className="text-[10px] font-black text-emerald-600 uppercase">Activar Inmueble</span></div>
+                                                    </>
                                                 )}
                                                 {userData.role === 'Propietario' && userData.propChoice === 'existente' && userData.linkedProp && (
                                                     <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Propiedad Asoc.</span><span className="text-[10px] font-black text-slate-800 uppercase text-right max-w-[150px] truncate">{userData.linkedProp.address}</span></div>
@@ -466,7 +543,7 @@
                                             <div className="bot-bubble animate-bubble bg-emerald-50 border-emerald-100">
                                                 <div className="flex items-center gap-3 text-emerald-600 mb-2">
                                                     <Icon name="check-circle" size={24} strokeWidth={3} />
-                                                    <h4 className="font-black uppercase tracking-tighter text-lg">Invitación Enviada</h4>
+                                                    <h4 className="font-black uppercase tracking-tighter text-lg">Operación Exitosa</h4>
                                                 </div>
                                                 <p className="text-emerald-700 font-medium leading-relaxed">
                                                     El usuario recibirá el link para su activación biométrica.
@@ -477,7 +554,7 @@
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-bubble" style={{animationDelay: '0.4s'}}>
-                                                <button onClick={() => { setStep(0); setUserData({ name: '', lastName: '', email: '', phone: '', role: '', propChoice: '', searchTerm: '', linkedProp: null, inqChoice: '', inqContractType: '', contractSearchTerm: '', linkedContract: null }); setCurrentSearch(''); }} className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-indigo-600 transition-all shadow-sm group">
+                                                <button onClick={() => { setStep(0); setUserData({ name: '', lastName: '', email: '', phone: '', role: '', propChoice: '', searchTerm: '', linkedProp: null, newPropAddress: '', newPropExtras: '', inqChoice: '', inqContractType: '', contractSearchTerm: '', linkedContract: null }); setCurrentSearch(''); }} className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-indigo-600 transition-all shadow-sm group">
                                                     <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="user-plus" /></div>
                                                     <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nuevo Usuario</span>
                                                 </button>
@@ -515,7 +592,10 @@
                                             step === 1 ? "Su Apellido..." :
                                             step === 2 ? "Correo Electrónico..." :
                                             step === 3 ? "Teléfono o WhatsApp..." : 
-                                            (step === 51 || step === 52) ? "Ej: Caseros, Alberdi..." : 
+                                            step === 51 ? "Ej: Caseros, Alberdi..." : 
+                                            step === 52 ? "Busca por dirección..." : 
+                                            step === 53 ? "Ej: Caseros 1230, Córdoba..." : 
+                                            step === 54 ? "Ej: Cochera, pileta, seguridad... o deja vacío" :
                                             (step === 62 || step === 63) ? "Ej: Dirección o dueño..." : ""
                                         }
                                         value={
@@ -523,7 +603,9 @@
                                             step === 1 ? userData.lastName :
                                             step === 2 ? userData.email :
                                             step === 3 ? userData.phone : 
-                                            (step === 51 || step === 52 || step === 62 || step === 63) ? currentSearch : ""
+                                            (step === 51 || step === 52 || step === 62 || step === 63) ? currentSearch : 
+                                            step === 53 ? userData.newPropAddress : 
+                                            step === 54 ? userData.newPropExtras : ""
                                         }
                                         onChange={(e) => {
                                             const v = e.target.value;
@@ -532,12 +614,16 @@
                                             else if(step === 2) setUserData({...userData, email: v});
                                             else if(step === 3) setUserData({...userData, phone: v});
                                             else if(step === 51 || step === 52 || step === 62 || step === 63) setCurrentSearch(v);
+                                            else if(step === 53) setUserData({...userData, newPropAddress: v});
+                                            else if(step === 54) setUserData({...userData, newPropExtras: v});
                                         }}
                                         className="input-chat shadow-inner"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 if (step < 4) handleNextStep();
                                                 else if (step === 51 || step === 52) executePropSearch();
+                                                else if (step === 53) submitNewPropAddress();
+                                                else if (step === 54) submitNewPropExtras();
                                                 else if (step === 62 || step === 63) executeContractSearch();
                                             }
                                         }}
@@ -547,6 +633,8 @@
                                         onClick={() => {
                                             if (step < 4) handleNextStep();
                                             else if (step === 51 || step === 52) executePropSearch();
+                                            else if (step === 53) submitNewPropAddress();
+                                            else if (step === 54) submitNewPropExtras();
                                             else if (step === 62 || step === 63) executeContractSearch();
                                         }}
                                         className="bg-indigo-600 text-white w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all shrink-0"
