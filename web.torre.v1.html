@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre - Torre de Control Admin</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        :root {
+            --brand-blue: #0055DD;
+            --brand-cyan: #00D1FF;
+            --brand-dark: #0A142F;
+            --bg-gray: #F4F7F9;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-gray);
+            color: #1e293b;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll, handle inside components */
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95) translateY(-10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .dropdown-pop { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: top right; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { 
+                if (window.lucide) window.lucide.createIcons(); 
+            }, [name, size, className]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const Gauge = ({ value, label }) => {
+            const color = value > 90 ? 'text-emerald-500' : value > 75 ? 'text-amber-500' : 'text-red-500';
+            return (
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="50%" cy="50%" r="45%" strokeWidth="8" fill="transparent" className="text-slate-100" stroke="currentColor" />
+                        <circle cx="50%" cy="50%" r="45%" strokeWidth="8" fill="transparent" strokeDasharray="283" strokeDashoffset={283 - (283 * value) / 100} className={color} stroke="currentColor" style={{ strokeLinecap: 'round', transition: 'stroke-dashoffset 1s ease-out' }} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-2xl font-black text-slate-800">{value}%</span>
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{label}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        function AdminWebOS() {
+            const [activeView, setActiveView] = useState('inicio');
+            const [showAddMenu, setShowAddMenu] = useState(false);
+            const addMenuRef = useRef(null);
+
+            // Mock Global Data
+            const adminData = {
+                name: "Martín López",
+                agency: "Inmobiliaria Raíces",
+                email: "martin@raices.com",
+                healthScore: 94,
+                feesBalance: 840500,
+                feesYieldToday: 1250,
+                clearingBalance: 4500000,
+                readyToPay: 2150000,
+                ownersReady: 14
+            };
+
+            const verdicts = [
+                { id: 1, type: 'aprobacion', title: 'Legajo Verificado: Juan Pérez', desc: 'IA confirma solvencia 3.2x. Identidad validada. Listo para contrato.', action: 'DAR OK FINAL', color: 'emerald' },
+                { id: 2, type: 'alerta', title: 'Dueño inactivo: Caseros 1230', desc: 'Presupuesto de plomería ($15.000) esperando OK hace 48hs.', action: 'PUSH URGENCIA', color: 'amber' },
+                { id: 3, type: 'riesgo', title: 'Renovación Crítica: Av. Colón 450', desc: 'Vence en 45 días. El inquilino es Platinum, enviar oferta de retención.', action: 'ENVIAR OFERTA', color: 'indigo' }
+            ];
+
+            const staffList = [
+                { id: 1, name: "Martín López", role: "Socio Gerente", status: "Activo", access: "Total" },
+                { id: 2, name: "Lucía Fernández", role: "Gestor Cobranzas", status: "Activo", access: "Tesorería" },
+                { id: 3, name: "Carlos Ruiz", role: "Asesor Comercial", status: "Pausado", access: "Solo Lectura" }
+            ];
+
+            // Cerrar dropdown clickeando afuera
+            useEffect(() => {
+                function handleClickOutside(event) {
+                    if (addMenuRef.current && !addMenuRef.current.contains(event.target)) {
+                        setShowAddMenu(false);
+                    }
+                }
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => document.removeEventListener("mousedown", handleClickOutside);
+            }, [addMenuRef]);
+
+            // --- VISTA 1: DASHBOARD (INICIO) ---
+            const DashboardView = () => (
+                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar">
+                    <header className="mb-8">
+                        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Proyección y Control</h1>
+                        <p className="text-slate-500 font-medium mt-1">Visión anticipada de tu negocio y acciones requeridas.</p>
+                    </header>
+
+                    <div className="grid grid-cols-12 gap-6 mb-6">
+                        
+                        {/* COLUMNA 1: Salud y Riesgo (Puntos 1, 2, 6) */}
+                        <div className="col-span-12 lg:col-span-3 space-y-6">
+                            <div className="glass-card p-6 rounded-3xl flex flex-col items-center text-center">
+                                <Gauge value={adminData.healthScore} label="Salud" />
+                                <p className="text-xs text-slate-500 mt-4 leading-relaxed">Puntualidad excelente. Resolución de tickets promedio: 24hs.</p>
+                            </div>
+                            
+                            <div className="glass-card p-6 rounded-3xl border-l-4 border-l-red-500">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Icon name="radar" className="text-red-500" />
+                                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Radar de Mora</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="bg-red-50 p-3 rounded-xl border border-red-100 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-xs font-bold text-red-800">Mariano Gomez</p>
+                                            <p className="text-[10px] text-red-600">Score cayó a 650</p>
+                                        </div>
+                                        <button className="text-[9px] bg-red-600 text-white px-2 py-1 rounded font-black uppercase">Ofrecer Préstamo</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* COLUMNA 2: Veredictos - El Juez (Punto 3) */}
+                        <div className="col-span-12 lg:col-span-5 flex flex-col">
+                            <div className="glass-card p-6 rounded-3xl flex-1 flex flex-col">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
+                                        <Icon name="gavel" className="text-[#0055DD]" /> La Valla de Veredictos
+                                    </h3>
+                                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-[10px] font-black uppercase">3 Acciones</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mb-4">El sistema ha validado estos procesos. Solo requieren tu autorización final.</p>
+                                
+                                <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                                    {verdicts.map(v => (
+                                        <div key={v.id} className={`bg-white border border-${v.color}-200 p-5 rounded-2xl shadow-sm flex flex-col gap-4 transition-all hover:shadow-md border-l-4 border-l-${v.color}-500`}>
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 text-sm">{v.title}</h4>
+                                                <p className="text-xs text-slate-600 mt-1">{v.desc}</p>
+                                            </div>
+                                            <button className={`w-full py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-${v.color}-600 transition-colors`}>
+                                                {v.action}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* COLUMNA 3: Tesorería y Ventas (Puntos 4, 5, 7, 8) */}
+                        <div className="col-span-12 lg:col-span-4 space-y-6">
+                            {/* Proyección Cash Flow */}
+                            <div className="glass-card p-6 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Recaudación y Clearing</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1"><span className="text-slate-300">Cobrado (Disponible)</span><span className="font-bold text-emerald-400">$2.15M</span></div>
+                                        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-emerald-400" style={{width:'40%'}}></div></div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1"><span className="text-slate-300">En Clearing (Rindiendo)</span><span className="font-bold text-[#00D1FF]">$4.5M</span></div>
+                                        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-[#00D1FF]" style={{width:'60%'}}></div></div>
+                                    </div>
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-slate-700">
+                                    <button className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-slate-900 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-400">
+                                        <Icon name="zap" size={16}/> Liquidar Masivo ({adminData.ownersReady} Dueños)
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Motor Honorarios Automáticos */}
+                            <div className="glass-card p-6 rounded-3xl border border-[#0055DD]/20 relative overflow-hidden">
+                                <Icon name="trending-up" size={80} className="absolute -right-4 -bottom-4 text-[#0055DD] opacity-5" />
+                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Mis Ganancias (Float Automático)</h3>
+                                <p className="text-3xl font-black text-[#0055DD]">${adminData.feesBalance.toLocaleString()}</p>
+                                <div className="mt-3 flex items-center gap-2 bg-blue-50 text-blue-700 p-2 rounded-lg border border-blue-100">
+                                    <Icon name="sparkles" size={16} className="text-amber-500" />
+                                    <p className="text-[10px] font-bold">Tu dinero rinde <strong>+${adminData.feesYieldToday}</strong> por día, sin hacer nada.</p>
+                                </div>
+                            </div>
+
+                            {/* Máquina de Ventas (Upselling) */}
+                            <div className="glass-card p-6 rounded-3xl">
+                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Upselling del Mes</h3>
+                                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center"><Icon name="shield" size={16}/></div>
+                                        <div><p className="text-xs font-bold text-slate-800">Garantías Vendidas</p><p className="text-[10px] text-slate-500">4 pólizas</p></div>
+                                    </div>
+                                    <span className="font-black text-emerald-600 text-sm">+$60.000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 2: ADMINISTRACIÓN (ABM de Gestores) ---
+            const AdministracionABM = () => (
+                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar">
+                    <header className="flex justify-between items-end mb-8">
+                        <div>
+                            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Administración de Equipo</h1>
+                            <p className="text-slate-500 font-medium mt-1">Gestiona los accesos y roles de tu staff en DptoLibre.</p>
+                        </div>
+                        <button className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-[#0055DD] transition-colors">
+                            <Icon name="user-plus" size={16} /> Invitar Miembro
+                        </button>
+                    </header>
+
+                    <div className="glass-card rounded-3xl overflow-hidden">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Miembro</th>
+                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Rol Asignado</th>
+                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Nivel de Acceso</th>
+                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Estado</th>
+                                    <th className="p-5 text-center text-[10px] font-black uppercase text-slate-400 tracking-widest">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {staffList.map(staff => (
+                                    <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="p-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black">
+                                                    {staff.name.charAt(0)}
+                                                </div>
+                                                <span className="font-bold text-slate-800">{staff.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-5 text-sm text-slate-600 font-medium">{staff.role}</td>
+                                        <td className="p-5 text-sm text-slate-600 font-medium">{staff.access}</td>
+                                        <td className="p-5">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${staff.status === 'Activo' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                                                {staff.status}
+                                            </span>
+                                        </td>
+                                        <td className="p-5 flex justify-center gap-2">
+                                            <button className="p-2 text-slate-400 hover:text-[#0055DD] transition-colors"><Icon name="edit" size={18} /></button>
+                                            <button className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Icon name="trash-2" size={18} /></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            // --- VISTA 3: PERFIL ADMIN ---
+            const PerfilView = () => (
+                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar flex justify-center items-start">
+                    <div className="max-w-2xl w-full glass-card p-10 rounded-[3rem] mt-10">
+                        <div className="flex flex-col items-center text-center mb-10">
+                            <div className="w-24 h-24 rounded-full border-4 border-[#0055DD] p-1 mb-4 shadow-lg">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" className="w-full h-full rounded-full bg-slate-100" alt="Avatar"/>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900">{adminData.name}</h2>
+                            <p className="text-sm font-bold text-[#0055DD] uppercase tracking-widest">{adminData.agency}</p>
+                            <p className="text-xs text-slate-500 mt-2">{adminData.email}</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Ajustes de Seguridad</h3>
+                            <button className="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl flex justify-between items-center hover:bg-slate-100 transition-colors">
+                                <div className="flex items-center gap-3 text-slate-700 font-bold text-sm"><Icon name="key" size={20} className="text-slate-400"/> Cambiar Contraseña</div>
+                                <Icon name="chevron-right" size={18} className="text-slate-300"/>
+                            </button>
+                            <button className="w-full bg-red-50 border border-red-100 p-5 rounded-2xl flex justify-between items-center hover:bg-red-100 transition-colors">
+                                <div className="flex items-center gap-3 text-red-600 font-black text-sm"><Icon name="log-out" size={20} className="text-red-400"/> Cerrar Sesión</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Plantillas para Vistas en Construcción
+            const EnConstruccion = ({ title }) => (
+                <div className="p-8 h-full flex flex-col items-center justify-center text-center opacity-40 animate-in">
+                    <Icon name="wrench" size={64} className="mb-6 text-slate-400" />
+                    <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Módulo de {title}</h2>
+                    <p className="font-bold text-slate-500 mt-2">Próximamente disponible en esta versión web.</p>
+                </div>
+            );
+
+            // --- RENDER PRINCIPAL LAYOUT ---
+            return (
+                <div className="flex h-screen w-full bg-[#F4F7F9] font-sans">
+                    {/* BARRA LATERAL (SIDEBAR) */}
+                    <aside className="w-64 bg-[#0A142F] text-white flex flex-col border-r border-slate-800 shadow-2xl z-20">
+                        <div className="p-6 pb-8 border-b border-white/5">
+                            <div className="flex items-center gap-3">
+                                <svg width="32" viewBox="0 0 32 40" fill="none"><path d="M16 0L32 6.4V33.6L16 40V6.4L16 0Z" fill="#00D1FF" fillOpacity="0.3"/><path d="M0 6.4L16 0V33.6L0 40V6.4Z" fill="#00D1FF"/></svg>
+                                <span className="font-black text-xl tracking-tighter leading-none">dpto<span className="font-light">libre</span></span>
+                            </div>
+                        </div>
+
+                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+                            <p className="px-3 pt-4 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest">General</p>
+                            
+                            {[
+                                { id: 'inicio', label: 'Inicio', icon: 'layout-dashboard' },
+                                { id: 'contratos', label: 'Contratos', icon: 'file-text' },
+                                { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+                                { id: 'propiedades', label: 'Propiedades', icon: 'building-2' },
+                            ].map(item => (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => setActiveView(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeView === item.id ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                >
+                                    <Icon name={item.icon} size={18} /> {item.label}
+                                </button>
+                            ))}
+
+                            <p className="px-3 pt-6 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest">Configuración</p>
+                            <button 
+                                onClick={() => setActiveView('administracion')}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeView === 'administracion' ? 'bg-[#0055DD] text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Icon name="settings" size={18} /> Administración
+                            </button>
+                        </nav>
+                        
+                        <div className="p-4 border-t border-white/5">
+                            <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-400">Plan Actual</span>
+                                    <span className="text-xs font-black text-[#00D1FF] uppercase tracking-widest">Enterprise</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* ÁREA DE CONTENIDO */}
+                    <div className="flex-1 flex flex-col relative overflow-hidden">
+                        
+                        {/* CABECERA TOP */}
+                        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex justify-between items-center z-10 sticky top-0">
+                            <div className="flex items-center gap-4">
+                                <h2 className="font-bold text-slate-400 uppercase tracking-widest text-xs">{activeView}</h2>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                {/* BOTÓN DE ACCIÓN RÁPIDA (+) */}
+                                <div className="relative" ref={addMenuRef}>
+                                    <button 
+                                        onClick={() => setShowAddMenu(!showAddMenu)}
+                                        className="flex items-center gap-2 bg-[#0055DD] text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-colors active:scale-95"
+                                    >
+                                        <Icon name="plus" size={16} /> Crear
+                                    </button>
+                                    
+                                    {showAddMenu && (
+                                        <div className="absolute top-12 right-0 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 dropdown-pop z-50">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 pt-2 pb-2">Acceso Rápido</p>
+                                            <button onClick={() => {setShowAddMenu(false); setActiveView('usuarios');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+                                                <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg"><Icon name="user" size={16}/></div> Nuevo Usuario
+                                            </button>
+                                            <button onClick={() => {setShowAddMenu(false); setActiveView('contratos');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+                                                <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-lg"><Icon name="file-signature" size={16}/></div> Nuevo Contrato
+                                            </button>
+                                            <button onClick={() => {setShowAddMenu(false); setActiveView('propiedades');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+                                                <div className="bg-amber-100 text-amber-600 p-1.5 rounded-lg"><Icon name="building-2" size={16}/></div> Nueva Propiedad
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="h-6 w-[1px] bg-slate-200"></div>
+
+                                <button className="text-slate-400 hover:text-slate-600 relative transition-colors">
+                                    <Icon name="bell" size={20} />
+                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                </button>
+                                
+                                <button onClick={() => setActiveView('perfil')} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left">
+                                    <div className="w-8 h-8 rounded-full border border-[#0055DD] overflow-hidden">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Perfil" />
+                                    </div>
+                                    <div className="hidden md:block">
+                                        <p className="text-xs font-bold text-slate-800 leading-none">{adminData.name}</p>
+                                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">{adminData.agency}</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* RUTEADOR DE VISTAS */}
+                        <div className="flex-1 overflow-hidden relative">
+                            {activeView === 'inicio' && <DashboardView />}
+                            {activeView === 'contratos' && <EnConstruccion title="Contratos" />}
+                            {activeView === 'usuarios' && <EnConstruccion title="Usuarios" />}
+                            {activeView === 'propiedades' && <EnConstruccion title="Propiedades" />}
+                            {activeView === 'administracion' && <AdministracionABM />}
+                            {activeView === 'perfil' && <PerfilView />}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DptoLibreApp />);
+    </script>
+</body>
+</html>
