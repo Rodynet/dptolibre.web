@@ -1,55 +1,77 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blindato Admin Final</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-900 font-sans">
-    
-    <div id="app-container" class="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-xl rounded-2xl border border-slate-200">
-        <header class="border-b pb-6">
-            <h1 class="text-3xl font-extrabold text-blue-900 tracking-tight">Blindato Admin</h1>
-            <p class="text-slate-500 mt-1">Panel de control del sistema de seguridad.</p>
-        </header>
+import React, { useState, useEffect } from 'react';
+import { Shield, CheckCircle, AlertTriangle, RefreshCw, Power } from 'lucide-react';
 
-        <main id="main-content" class="mt-8">
-            <div id="status-card" class="p-6 bg-green-50 border border-green-200 rounded-xl">
-                <h2 class="text-lg font-bold text-green-800">Estado del Sistema</h2>
-                <p class="text-green-600 mt-2">El motor de ejecución está operativo y estable.</p>
-            </div>
+export default function App() {
+  const [status, setStatus] = useState('active');
+  const [logs, setLogs] = useState([]);
 
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button onclick="showAlert('Servicio iniciado correctamente')" class="w-full p-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                    Iniciar Servicio
-                </button>
-                <button onclick="showAlert('Estado verificado')" class="w-full p-4 bg-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-300 transition">
-                    Verificar Estado
-                </button>
+  useEffect(() => {
+    addLog('Sistema inicializado correctamente.');
+  }, []);
+
+  const addLog = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs((prev) => [{ id: Date.now(), message, timestamp }, ...prev].slice(0, 5));
+  };
+
+  const handleAction = (action) => {
+    if (action === 'restart') {
+      setStatus('restarting');
+      addLog('Reiniciando servicios...');
+      setTimeout(() => {
+        setStatus('active');
+        addLog('Servicios operativos.');
+      }, 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-6 flex flex-col items-center">
+      <div className="max-w-md w-full bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-700">
+        
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
+          <Shield className="text-blue-500 w-8 h-8" />
+          <h1 className="text-2xl font-bold tracking-tight">Blindato Admin</h1>
+        </div>
+
+        {/* Status Badge */}
+        <div className={`mb-6 flex items-center justify-between p-4 rounded-xl ${status === 'active' ? 'bg-green-900/30 border border-green-700' : 'bg-amber-900/30 border border-amber-700'}`}>
+          <div className="flex items-center gap-2">
+            {status === 'active' ? <CheckCircle className="text-green-500" /> : <RefreshCw className="text-amber-500 animate-spin" />}
+            <span className="font-semibold">{status === 'active' ? 'Sistema Protegido' : 'Reiniciando...'}</span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="grid grid-cols-2 gap-3 mb-8">
+          <button 
+            onClick={() => handleAction('restart')}
+            className="flex flex-col items-center gap-2 p-4 bg-slate-700 hover:bg-slate-600 rounded-xl transition"
+          >
+            <Power size={20} />
+            <span className="text-xs">Reiniciar</span>
+          </button>
+          <button 
+            onClick={() => addLog('Verificación de seguridad ejecutada.')}
+            className="flex flex-col items-center gap-2 p-4 bg-slate-700 hover:bg-slate-600 rounded-xl transition"
+          >
+            <Shield size={20} />
+            <span className="text-xs">Escanear</span>
+          </button>
+        </div>
+
+        {/* Logs */}
+        <div className="space-y-2">
+          <h3 className="text-sm text-slate-400 font-medium uppercase tracking-wider">Actividad reciente</h3>
+          {logs.map((log) => (
+            <div key={log.id} className="text-xs bg-slate-950 p-2 rounded border border-slate-700 flex justify-between">
+              <span>{log.message}</span>
+              <span className="text-slate-500">{log.timestamp}</span>
             </div>
-        </main>
+          ))}
+        </div>
+      </div>
     </div>
-
-    <script>
-        // Función de utilidad segura para reemplazar alerts
-        function showAlert(message) {
-            const container = document.getElementById('main-content');
-            const alert = document.createElement('div');
-            alert.className = 'mt-4 p-4 bg-blue-100 text-blue-900 rounded-lg fade-in';
-            alert.textContent = message;
-            container.appendChild(alert);
-            
-            setTimeout(() => {
-                alert.remove();
-            }, 3000);
-        }
-
-        console.log("Blindato Admin cargado correctamente sin dependencias externas.");
-    </script>
-</body>
-</html>
+  );
+}
