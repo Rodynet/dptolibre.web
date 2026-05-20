@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre - Torre de Control Admin</title>
+    <title>Blindato Admin - Alta Usuario AI V6.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -15,40 +15,53 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         
         :root {
             --brand-blue: #0055DD;
-            --brand-cyan: #00D1FF;
             --brand-dark: #0A142F;
-            --bg-gray: #F4F7F9;
         }
 
         body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-gray);
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
             color: #1e293b;
-            margin: 0;
-            overflow: hidden; /* Prevent body scroll, handle inside components */
+        }
+
+        .animate-bubble { 
+            animation: bubbleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+        }
+        @keyframes bubbleIn { 
+            from { opacity: 0; transform: translateY(15px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        .bot-bubble {
+            @apply bg-white border border-slate-100 p-5 rounded-tr-[2rem] rounded-br-[2rem] rounded-bl-[2rem] shadow-sm max-w-[85%] text-sm font-medium leading-relaxed;
+        }
+
+        .user-bubble {
+            @apply bg-[#0055DD] text-white p-5 rounded-tl-[2rem] rounded-bl-[2rem] rounded-br-[2rem] shadow-lg max-w-[80%] text-sm font-bold ml-auto;
+        }
+
+        .input-chat {
+            @apply w-full bg-white border-2 border-slate-100 px-6 py-4 rounded-2xl text-base font-bold focus:ring-4 focus:ring-blue-50 focus:border-[#0055DD] outline-none transition-all;
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .sidebar { background-color: #0A142F; }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        .typing-dot {
+            width: 4px; height: 4px; background: #94a3b8; border-radius: 50%;
+            animation: typing 1.4s infinite;
         }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95) translateY(-10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-        .dropdown-pop { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: top right; }
+        .role-card {
+            @apply p-4 bg-white border-2 border-slate-50 rounded-2xl text-left font-bold text-slate-700 flex items-center gap-3 hover:border-[#0055DD] hover:bg-blue-50 transition-all active:scale-95 cursor-pointer;
+        }
     </style>
 </head>
 <body>
@@ -64,377 +77,564 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
-        const Gauge = ({ value, label }) => {
-            const color = value > 90 ? 'text-emerald-500' : value > 75 ? 'text-amber-500' : 'text-red-500';
-            return (
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="50%" cy="50%" r="45%" strokeWidth="8" fill="transparent" className="text-slate-100" stroke="currentColor" />
-                        <circle cx="50%" cy="50%" r="45%" strokeWidth="8" fill="transparent" strokeDasharray="283" strokeDashoffset={283 - (283 * value) / 100} className={color} stroke="currentColor" style={{ strokeLinecap: 'round', transition: 'stroke-dashoffset 1s ease-out' }} />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-black text-slate-800">{value}%</span>
-                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{label}</span>
-                    </div>
-                </div>
-            );
-        };
+        // Mock de base de datos de propiedades y contratos para la búsqueda
+        const mockProps = [
+            { id: 1, address: "Caseros 1230, 4B", neighborhood: "Centro", rooms: 2 },
+            { id: 2, address: "Av. Colón 450", neighborhood: "Centro", rooms: 3 }
+        ];
 
-        function AdminWebOS() {
-            const [activeView, setActiveView] = useState('inicio');
-            const [showAddMenu, setShowAddMenu] = useState(false);
-            const addMenuRef = useRef(null);
+        const mockContracts = [
+            { id: "CTR-101", address: "Caseros 1230, 4B", owner: "Roberto Daer" },
+            { id: "CTR-102", address: "Av. Colón 450", owner: "Carlos Paz" },
+            { id: "CTR-103", address: "San Martín 22", owner: "Ana Gomez" },
+            { id: "CTR-104", address: "Belgrano 880", owner: "Roberto Daer" }
+        ];
 
-            // Mock Global Data
-            const adminData = {
-                name: "Martín López",
-                agency: "Inmobiliaria Raíces",
-                email: "martin@raices.com",
-                healthScore: 94,
-                feesBalance: 840500,
-                feesYieldToday: 1250,
-                clearingBalance: 4500000,
-                readyToPay: 2150000,
-                ownersReady: 14
+        function BlindatoAdminApp() {
+            /* Pasos Lógicos:
+               0-3: Datos personales
+               4: Selección de Rol
+               --- Si Propietario ---
+               50: Propiedad Nueva / Existente / Saltar
+               51: Búsqueda de propiedad existente
+               52: Resultados propiedad existente
+               53-55: Flujo Alta Propiedad Conversacional (NUEVO CORREGIDO)
+               --- Si Inquilino ---
+               60: Asociar Contrato o Solo Invitar
+               61: Contrato Nuevo o Existente
+               62: Búsqueda de contrato (Input)
+               63: Resultados de contrato
+               --- Final ---
+               80: Resumen Confirmación
+               90: Éxito Final
+            */
+            const [step, setStep] = useState(0);
+            const [isMassive, setIsMassive] = useState(false);
+            const [isTyping, setIsTyping] = useState(false);
+            const [currentSearch, setCurrentSearch] = useState("");
+            
+            const [searchResults, setSearchResults] = useState([]);
+            const [searchContractResults, setSearchContractResults] = useState([]);
+
+            const [userData, setUserData] = useState({ 
+                name: '', lastName: '', email: '', phone: '', 
+                role: '', 
+                propChoice: '', 
+                searchTerm: '', 
+                linkedProp: null,
+                newPropAddress: '',
+                newPropExtras: '',
+                inqChoice: '',
+                inqContractType: '',
+                contractSearchTerm: '',
+                linkedContract: null
+            });
+
+            const scrollRef = useRef(null);
+
+            const typeAndGo = (nextStep, delay = 800) => {
+                setIsTyping(true);
+                setTimeout(() => {
+                    setIsTyping(false);
+                    setStep(nextStep);
+                }, delay);
             };
 
-            const verdicts = [
-                { id: 1, type: 'aprobacion', title: 'Legajo Verificado: Juan Pérez', desc: 'IA confirma solvencia 3.2x. Identidad validada. Listo para contrato.', action: 'DAR OK FINAL', color: 'emerald' },
-                { id: 2, type: 'alerta', title: 'Dueño inactivo: Caseros 1230', desc: 'Presupuesto de plomería ($15.000) esperando OK hace 48hs.', action: 'PUSH URGENCIA', color: 'amber' },
-                { id: 3, type: 'riesgo', title: 'Renovación Crítica: Av. Colón 450', desc: 'Vence en 45 días. El inquilino es Platinum, enviar oferta de retención.', action: 'ENVIAR OFERTA', color: 'indigo' }
-            ];
+            const handleNextStep = () => {
+                if (step === 0 && !userData.name.trim()) return;
+                if (step === 1 && !userData.lastName.trim()) return;
+                if (step === 2 && !userData.email.trim()) return;
+                if (step === 3 && !userData.phone.trim()) return;
 
-            const staffList = [
-                { id: 1, name: "Martín López", role: "Socio Gerente", status: "Activo", access: "Total" },
-                { id: 2, name: "Lucía Fernández", role: "Gestor Cobranzas", status: "Activo", access: "Tesorería" },
-                { id: 3, name: "Carlos Ruiz", role: "Asesor Comercial", status: "Pausado", access: "Solo Lectura" }
-            ];
+                setStep(step + 1);
+                if (step + 1 < 5) typeAndGo(step + 1);
+            };
 
-            // Cerrar dropdown clickeando afuera
+            const selectRole = (roleName) => {
+                setUserData({ ...userData, role: roleName });
+                if (roleName === 'Propietario') typeAndGo(50);
+                else if (roleName === 'Inquilino') typeAndGo(60);
+                else typeAndGo(80); // Administrador va directo al resumen
+            };
+
+            // --- LÓGICA DUEÑO Y PROPIEDAD ---
+            const handlePropChoice = (choice) => {
+                setUserData({ ...userData, propChoice: choice });
+                if (choice === 'nueva') typeAndGo(53); // Inicia Mago de Propiedad
+                else if (choice === 'existente') typeAndGo(51); // Busca en Base
+                else typeAndGo(80); // Salta y va a resumen
+            };
+
+            const executePropSearch = () => {
+                const term = currentSearch.toLowerCase().trim();
+                if (!term) return;
+                setUserData(prev => ({ ...prev, searchTerm: term }));
+                setIsTyping(true);
+                setStep(52); 
+                setTimeout(() => {
+                    const results = mockProps.filter(p => p.address.toLowerCase().includes(term));
+                    setSearchResults(results);
+                    setIsTyping(false);
+                    setCurrentSearch('');
+                }, 1200);
+            };
+
+            const selectProperty = (prop) => {
+                setUserData({ ...userData, linkedProp: prop });
+                typeAndGo(80);
+            };
+
+            // Helpers Flujo Nueva Propiedad (Paso 53 al 55) - CORREGIDO
+            const submitNewPropAddress = () => {
+                if (!userData.newPropAddress.trim()) return;
+                typeAndGo(54, 1500); // Simulamos un delay más largo de "Geolocalización"
+            };
+
+            const submitNewPropExtras = () => {
+                const val = userData.newPropExtras.trim() || 'Sin extras adicionales';
+                setUserData(prev => ({ ...prev, newPropExtras: val }));
+                typeAndGo(55);
+            };
+
+            // --- LÓGICA INQUILINO ---
+            const handleInqChoice = (choice) => {
+                setUserData({ ...userData, inqChoice: choice });
+                if (choice === 'contrato') typeAndGo(61);
+                else typeAndGo(80); // Solo invitar
+            };
+
+            const handleContractType = (type) => {
+                setUserData({ ...userData, inqContractType: type });
+                if (type === 'nuevo') typeAndGo(80); // Si es nuevo va al resumen directo
+                else typeAndGo(62); // Si es existente busca
+            };
+
+            const executeContractSearch = () => {
+                const term = currentSearch.toLowerCase().trim();
+                if (!term) return;
+                setUserData(prev => ({ ...prev, contractSearchTerm: term }));
+                setIsTyping(true);
+                setStep(63);
+                setTimeout(() => {
+                    const results = mockContracts.filter(c => 
+                        c.address.toLowerCase().includes(term) || 
+                        c.owner.toLowerCase().includes(term)
+                    );
+                    setSearchContractResults(results);
+                    setIsTyping(false);
+                    setCurrentSearch('');
+                }, 1200);
+            };
+
+            const selectContract = (contract) => {
+                setUserData({ ...userData, linkedContract: contract });
+                typeAndGo(80);
+            };
+
+            // --- ACCIONES FINALES ---
+            const editData = () => {
+                setStep(0);
+                // Retiene los datos para edición rápida
+            };
+
+            const confirmAndSend = () => {
+                typeAndGo(90, 1500);
+            };
+
+            const resetAll = () => {
+                setStep(0);
+                setUserData({ 
+                    name: '', lastName: '', email: '', phone: '', 
+                    role: '', propChoice: '', searchTerm: '', 
+                    linkedProp: null, newPropAddress: '', newPropExtras: '', 
+                    inqChoice: '', inqContractType: '', contractSearchTerm: '', 
+                    linkedContract: null 
+                });
+                setCurrentSearch('');
+            };
+
+            // Auto-scroll
             useEffect(() => {
-                function handleClickOutside(event) {
-                    if (addMenuRef.current && !addMenuRef.current.contains(event.target)) {
-                        setShowAddMenu(false);
-                    }
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                 }
-                document.addEventListener("mousedown", handleClickOutside);
-                return () => document.removeEventListener("mousedown", handleClickOutside);
-            }, [addMenuRef]);
+            }, [step, isTyping, searchResults, searchContractResults, userData]);
 
-            // --- VISTA 1: DASHBOARD (INICIO) ---
-            const DashboardView = () => (
-                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar">
-                    <header className="mb-8">
-                        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Proyección y Control</h1>
-                        <p className="text-slate-500 font-medium mt-1">Visión anticipada de tu negocio y acciones requeridas.</p>
-                    </header>
-
-                    <div className="grid grid-cols-12 gap-6 mb-6">
-                        
-                        {/* COLUMNA 1: Salud y Riesgo (Puntos 1, 2, 6) */}
-                        <div className="col-span-12 lg:col-span-3 space-y-6">
-                            <div className="glass-card p-6 rounded-3xl flex flex-col items-center text-center">
-                                <Gauge value={adminData.healthScore} label="Salud" />
-                                <p className="text-xs text-slate-500 mt-4 leading-relaxed">Puntualidad excelente. Resolución de tickets promedio: 24hs.</p>
-                            </div>
-                            
-                            <div className="glass-card p-6 rounded-3xl border-l-4 border-l-red-500">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <Icon name="radar" className="text-red-500" />
-                                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Radar de Mora</h3>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="bg-red-50 p-3 rounded-xl border border-red-100 flex justify-between items-center">
-                                        <div>
-                                            <p className="text-xs font-bold text-red-800">Mariano Gomez</p>
-                                            <p className="text-[10px] text-red-600">Score cayó a 650</p>
-                                        </div>
-                                        <button className="text-[9px] bg-red-600 text-white px-2 py-1 rounded font-black uppercase">Ofrecer Préstamo</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* COLUMNA 2: Veredictos - El Juez (Punto 3) */}
-                        <div className="col-span-12 lg:col-span-5 flex flex-col">
-                            <div className="glass-card p-6 rounded-3xl flex-1 flex flex-col">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                                        <Icon name="gavel" className="text-[#0055DD]" /> La Valla de Veredictos
-                                    </h3>
-                                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-[10px] font-black uppercase">3 Acciones</span>
-                                </div>
-                                <p className="text-xs text-slate-500 mb-4">El sistema ha validado estos procesos. Solo requieren tu autorización final.</p>
-                                
-                                <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                                    {verdicts.map(v => (
-                                        <div key={v.id} className={`bg-white border border-${v.color}-200 p-5 rounded-2xl shadow-sm flex flex-col gap-4 transition-all hover:shadow-md border-l-4 border-l-${v.color}-500`}>
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 text-sm">{v.title}</h4>
-                                                <p className="text-xs text-slate-600 mt-1">{v.desc}</p>
-                                            </div>
-                                            <button className={`w-full py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-${v.color}-600 transition-colors`}>
-                                                {v.action}
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* COLUMNA 3: Tesorería y Ventas (Puntos 4, 5, 7, 8) */}
-                        <div className="col-span-12 lg:col-span-4 space-y-6">
-                            {/* Proyección Cash Flow */}
-                            <div className="glass-card p-6 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Recaudación y Clearing</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <div className="flex justify-between text-xs mb-1"><span className="text-slate-300">Cobrado (Disponible)</span><span className="font-bold text-emerald-400">$2.15M</span></div>
-                                        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-emerald-400" style={{width:'40%'}}></div></div>
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between text-xs mb-1"><span className="text-slate-300">En Clearing (Rindiendo)</span><span className="font-bold text-[#00D1FF]">$4.5M</span></div>
-                                        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-[#00D1FF]" style={{width:'60%'}}></div></div>
-                                    </div>
-                                </div>
-                                <div className="mt-6 pt-4 border-t border-slate-700">
-                                    <button className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-slate-900 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-400">
-                                        <Icon name="zap" size={16}/> Liquidar Masivo ({adminData.ownersReady} Dueños)
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Motor Honorarios Automáticos */}
-                            <div className="glass-card p-6 rounded-3xl border border-[#0055DD]/20 relative overflow-hidden">
-                                <Icon name="trending-up" size={80} className="absolute -right-4 -bottom-4 text-[#0055DD] opacity-5" />
-                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Mis Ganancias (Float Automático)</h3>
-                                <p className="text-3xl font-black text-[#0055DD]">${adminData.feesBalance.toLocaleString()}</p>
-                                <div className="mt-3 flex items-center gap-2 bg-blue-50 text-blue-700 p-2 rounded-lg border border-blue-100">
-                                    <Icon name="sparkles" size={16} className="text-amber-500" />
-                                    <p className="text-[10px] font-bold">Tu dinero rinde <strong>+${adminData.feesYieldToday}</strong> por día, sin hacer nada.</p>
-                                </div>
-                            </div>
-
-                            {/* Máquina de Ventas (Upselling) */}
-                            <div className="glass-card p-6 rounded-3xl">
-                                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Upselling del Mes</h3>
-                                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center"><Icon name="shield" size={16}/></div>
-                                        <div><p className="text-xs font-bold text-slate-800">Garantías Vendidas</p><p className="text-[10px] text-slate-500">4 pólizas</p></div>
-                                    </div>
-                                    <span className="font-black text-emerald-600 text-sm">+$60.000</span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
+            const Sidebar = () => (
+                <aside className="w-24 sidebar text-white flex flex-col items-center py-8 gap-10 border-r border-slate-800 h-screen fixed left-0 top-0 z-50 shadow-2xl">
+                    <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg">B</div>
+                    <nav className="flex flex-col gap-8 text-slate-500">
+                        <div className="p-3 hover:text-white transition-colors cursor-pointer"><Icon name="layout-grid" size={24} /></div>
+                        <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><Icon name="user-plus" size={24} /></div>
+                        <div className="p-3 hover:text-white transition-colors cursor-pointer"><Icon name="building" size={24} /></div>
+                        <div className="p-3 hover:text-white transition-colors cursor-pointer"><Icon name="file-text" size={24} /></div>
+                        <div className="p-3 hover:text-white transition-colors cursor-pointer"><Icon name="wallet" size={24} /></div>
+                    </nav>
+                </aside>
             );
 
-            // --- VISTA 2: ADMINISTRACIÓN (ABM de Gestores) ---
-            const AdministracionABM = () => (
-                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar">
-                    <header className="flex justify-between items-end mb-8">
-                        <div>
-                            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Administración de Equipo</h1>
-                            <p className="text-slate-500 font-medium mt-1">Gestiona los accesos y roles de tu staff en DptoLibre.</p>
-                        </div>
-                        <button className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-[#0055DD] transition-colors">
-                            <Icon name="user-plus" size={16} /> Invitar Miembro
-                        </button>
-                    </header>
+            // Control de visibilidad del input inferior
+            const showInput = (step >= 0 && step <= 3) || step === 51 || step === 52 || step === 53 || step === 54 || step === 62 || step === 63;
 
-                    <div className="glass-card rounded-3xl overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-100">
-                                <tr>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Miembro</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Rol Asignado</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Nivel de Acceso</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Estado</th>
-                                    <th className="p-5 text-center text-[10px] font-black uppercase text-slate-400 tracking-widest">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {staffList.map(staff => (
-                                    <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="p-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black">
-                                                    {staff.name.charAt(0)}
-                                                </div>
-                                                <span className="font-bold text-slate-800">{staff.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-5 text-sm text-slate-600 font-medium">{staff.role}</td>
-                                        <td className="p-5 text-sm text-slate-600 font-medium">{staff.access}</td>
-                                        <td className="p-5">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${staff.status === 'Activo' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                                                {staff.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-5 flex justify-center gap-2">
-                                            <button className="p-2 text-slate-400 hover:text-[#0055DD] transition-colors"><Icon name="edit" size={18} /></button>
-                                            <button className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Icon name="trash-2" size={18} /></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-
-            // --- VISTA 3: PERFIL ADMIN ---
-            const PerfilView = () => (
-                <div className="p-8 animate-in h-full overflow-y-auto custom-scrollbar flex justify-center items-start">
-                    <div className="max-w-2xl w-full glass-card p-10 rounded-[3rem] mt-10">
-                        <div className="flex flex-col items-center text-center mb-10">
-                            <div className="w-24 h-24 rounded-full border-4 border-[#0055DD] p-1 mb-4 shadow-lg">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" className="w-full h-full rounded-full bg-slate-100" alt="Avatar"/>
-                            </div>
-                            <h2 className="text-2xl font-black text-slate-900">{adminData.name}</h2>
-                            <p className="text-sm font-bold text-[#0055DD] uppercase tracking-widest">{adminData.agency}</p>
-                            <p className="text-xs text-slate-500 mt-2">{adminData.email}</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Ajustes de Seguridad</h3>
-                            <button className="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl flex justify-between items-center hover:bg-slate-100 transition-colors">
-                                <div className="flex items-center gap-3 text-slate-700 font-bold text-sm"><Icon name="key" size={20} className="text-slate-400"/> Cambiar Contraseña</div>
-                                <Icon name="chevron-right" size={18} className="text-slate-300"/>
-                            </button>
-                            <button className="w-full bg-red-50 border border-red-100 p-5 rounded-2xl flex justify-between items-center hover:bg-red-100 transition-colors">
-                                <div className="flex items-center gap-3 text-red-600 font-black text-sm"><Icon name="log-out" size={20} className="text-red-400"/> Cerrar Sesión</div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            // Plantillas para Vistas en Construcción
-            const EnConstruccion = ({ title }) => (
-                <div className="p-8 h-full flex flex-col items-center justify-center text-center opacity-40 animate-in">
-                    <Icon name="wrench" size={64} className="mb-6 text-slate-400" />
-                    <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Módulo de {title}</h2>
-                    <p className="font-bold text-slate-500 mt-2">Próximamente disponible en esta versión web.</p>
-                </div>
-            );
-
-            // --- RENDER PRINCIPAL LAYOUT ---
             return (
-                <div className="flex h-screen w-full bg-[#F4F7F9] font-sans">
-                    {/* BARRA LATERAL (SIDEBAR) */}
-                    <aside className="w-64 bg-[#0A142F] text-white flex flex-col border-r border-slate-800 shadow-2xl z-20">
-                        <div className="p-6 pb-8 border-b border-white/5">
+                <div className="flex min-h-screen w-full relative overflow-hidden bg-[#F8FAFC]">
+                    <Sidebar />
+                    
+                    <main className="flex-1 flex flex-col ml-24 h-screen max-w-4xl mx-auto relative border-x border-slate-100 bg-white shadow-sm">
+                        
+                        <header className="p-6 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-40">
                             <div className="flex items-center gap-3">
-                                <svg width="32" viewBox="0 0 32 40" fill="none"><path d="M16 0L32 6.4V33.6L16 40V6.4L16 0Z" fill="#00D1FF" fillOpacity="0.3"/><path d="M0 6.4L16 0V33.6L0 40V6.4Z" fill="#00D1FF"/></svg>
-                                <span className="font-black text-xl tracking-tighter leading-none">dpto<span className="font-light">libre</span></span>
+                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#0055DD] shadow-inner">
+                                    <Icon name="sparkles" size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 leading-none italic">Secretaría Digital</h2>
+                                    <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Conectado • Asistente AI</p>
+                                </div>
                             </div>
-                        </div>
-
-                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                            <p className="px-3 pt-4 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest">General</p>
-                            
-                            {[
-                                { id: 'inicio', label: 'Inicio', icon: 'layout-dashboard' },
-                                { id: 'contratos', label: 'Contratos', icon: 'file-text' },
-                                { id: 'usuarios', label: 'Usuarios', icon: 'users' },
-                                { id: 'propiedades', label: 'Propiedades', icon: 'building-2' },
-                            ].map(item => (
-                                <button 
-                                    key={item.id}
-                                    onClick={() => setActiveView(item.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeView === item.id ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                >
-                                    <Icon name={item.icon} size={18} /> {item.label}
-                                </button>
-                            ))}
-
-                            <p className="px-3 pt-6 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest">Configuración</p>
                             <button 
-                                onClick={() => setActiveView('administracion')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeView === 'administracion' ? 'bg-[#0055DD] text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                onClick={() => { setIsMassive(!isMassive); resetAll(); }}
+                                className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 hover:text-indigo-600 transition-all"
                             >
-                                <Icon name="settings" size={18} /> Administración
+                                {isMassive ? "Vía Chat" : "Carga Masiva"}
                             </button>
-                        </nav>
-                        
-                        <div className="p-4 border-t border-white/5">
-                            <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold text-slate-400">Plan Actual</span>
-                                    <span className="text-xs font-black text-[#00D1FF] uppercase tracking-widest">Enterprise</span>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* ÁREA DE CONTENIDO */}
-                    <div className="flex-1 flex flex-col relative overflow-hidden">
-                        
-                        {/* CABECERA TOP */}
-                        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex justify-between items-center z-10 sticky top-0">
-                            <div className="flex items-center gap-4">
-                                <h2 className="font-bold text-slate-400 uppercase tracking-widest text-xs">{activeView}</h2>
-                            </div>
-
-                            <div className="flex items-center gap-6">
-                                {/* BOTÓN DE ACCIÓN RÁPIDA (+) */}
-                                <div className="relative" ref={addMenuRef}>
-                                    <button 
-                                        onClick={() => setShowAddMenu(!showAddMenu)}
-                                        className="flex items-center gap-2 bg-[#0055DD] text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-colors active:scale-95"
-                                    >
-                                        <Icon name="plus" size={16} /> Crear
-                                    </button>
-                                    
-                                    {showAddMenu && (
-                                        <div className="absolute top-12 right-0 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 dropdown-pop z-50">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 pt-2 pb-2">Acceso Rápido</p>
-                                            <button onClick={() => {setShowAddMenu(false); setActiveView('usuarios');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
-                                                <div className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg"><Icon name="user" size={16}/></div> Nuevo Usuario
-                                            </button>
-                                            <button onClick={() => {setShowAddMenu(false); setActiveView('contratos');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
-                                                <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-lg"><Icon name="file-signature" size={16}/></div> Nuevo Contrato
-                                            </button>
-                                            <button onClick={() => {setShowAddMenu(false); setActiveView('propiedades');}} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
-                                                <div className="bg-amber-100 text-amber-600 p-1.5 rounded-lg"><Icon name="building-2" size={16}/></div> Nueva Propiedad
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="h-6 w-[1px] bg-slate-200"></div>
-
-                                <button className="text-slate-400 hover:text-slate-600 relative transition-colors">
-                                    <Icon name="bell" size={20} />
-                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                                </button>
-                                
-                                <button onClick={() => setActiveView('perfil')} className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left">
-                                    <div className="w-8 h-8 rounded-full border border-[#0055DD] overflow-hidden">
-                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Perfil" />
-                                    </div>
-                                    <div className="hidden md:block">
-                                        <p className="text-xs font-bold text-slate-800 leading-none">{adminData.name}</p>
-                                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">{adminData.agency}</p>
-                                    </div>
-                                </button>
-                            </div>
                         </header>
 
-                        {/* RUTEADOR DE VISTAS */}
-                        <div className="flex-1 overflow-hidden relative">
-                            {activeView === 'inicio' && <DashboardView />}
-                            {activeView === 'contratos' && <EnConstruccion title="Contratos" />}
-                            {activeView === 'usuarios' && <EnConstruccion title="Usuarios" />}
-                            {activeView === 'propiedades' && <EnConstruccion title="Propiedades" />}
-                            {activeView === 'administracion' && <AdministracionABM />}
-                            {activeView === 'perfil' && <PerfilView />}
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar pb-48">
+                            
+                            {/* Bienvenida */}
+                            <div className="bot-bubble animate-bubble">
+                                <p>¡Hola! Soy tu asistente de Blindato. Vamos a cargar un usuario nuevo en tu red.</p>
+                                <p className="mt-2 text-indigo-500 font-bold italic">¿Cuál es su nombre?</p>
+                            </div>
+
+                            {!isMassive && (
+                                <React.Fragment>
+                                    {/* PASOS 1-4: DATOS BÁSICOS */}
+                                    {step >= 1 && <div className="user-bubble animate-bubble">{userData.name}</div>}
+                                    {step === 1 && !isTyping && <div className="bot-bubble animate-bubble italic">¿Y su apellido?</div>}
+
+                                    {step >= 2 && <div className="user-bubble animate-bubble">{userData.lastName}</div>}
+                                    {step === 2 && !isTyping && <div className="bot-bubble animate-bubble">Perfecto. ¿Cuál es su correo electrónico?</div>}
+
+                                    {step >= 3 && <div className="user-bubble animate-bubble">{userData.email}</div>}
+                                    {step === 3 && !isTyping && <div className="bot-bubble animate-bubble">¿A qué teléfono o WhatsApp enviamos la invitación?</div>}
+
+                                    {step >= 4 && <div className="user-bubble animate-bubble">{userData.phone}</div>}
+                                    
+                                    {/* SELECCIÓN DE ROL */}
+                                    {step === 4 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            <p>Excelente. Ahora selecciona el rol que tendrá <strong>{userData.name}</strong> en la plataforma:</p>
+                                            <div className="mt-6 flex flex-col gap-3">
+                                                {[
+                                                    { id: 'Inquilino', icon: 'user', desc: 'Ocupante / Pagador' },
+                                                    { id: 'Propietario', icon: 'shield', desc: 'Dueño de activos' },
+                                                    { id: 'Administrador', icon: 'building-2', desc: 'Gestor' }
+                                                ].map(roleItem => (
+                                                    <div key={roleItem.id} onClick={() => selectRole(roleItem.id)} className="role-card group">
+                                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-[#0055DD] group-hover:text-white transition-all"><Icon name={roleItem.icon} size={18}/></div>
+                                                        <div className="flex-1"><p className="text-xs font-black uppercase tracking-widest">{roleItem.id}</p><p className="text-[9px] text-slate-400 font-bold uppercase">{roleItem.desc}</p></div>
+                                                        <Icon name="chevron-right" size={16} className="text-slate-200 group-hover:text-slate-400" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {step >= 5 && <div className="user-bubble animate-bubble uppercase tracking-widest">{userData.role}</div>}
+
+                                    {/* --- RAMA PROPIETARIO: DECISIÓN --- */}
+                                    {step === 50 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            <p>¡Entendido! Podemos asociar a este propietario a una de sus propiedades ahora mismo o hacerlo más tarde.</p>
+                                            <p className="font-bold text-slate-700 mt-2">¿Querés asociarlo ahora?</p>
+                                            <div className="mt-4 flex flex-col gap-2">
+                                                <button onClick={() => handlePropChoice('existente')} className="p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-[#0055DD] hover:bg-blue-50 transition-all flex items-center gap-3"><Icon name="search" size={18}/><span className="text-xs uppercase tracking-widest">A propiedad Existente</span></button>
+                                                <button onClick={() => handlePropChoice('nueva')} className="p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-emerald-500 hover:bg-emerald-50 transition-all flex items-center gap-3"><Icon name="plus-circle" size={18}/><span className="text-xs uppercase tracking-widest">Crear Nueva Propiedad</span></button>
+                                                <button onClick={() => handlePropChoice('saltar')} className="p-3 text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-slate-600 mt-2">Saltar paso (Opcional)</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* MUESTRA DECISIÓN DE PROPIEDAD */}
+                                    {step >= 51 && userData.propChoice === 'existente' && <div className="user-bubble animate-bubble uppercase tracking-widest">Propiedad Existente</div>}
+                                    {step >= 51 && userData.propChoice === 'nueva' && <div className="user-bubble animate-bubble uppercase tracking-widest">Crear Nueva Propiedad</div>}
+                                    {step >= 51 && userData.propChoice === 'saltar' && <div className="user-bubble animate-bubble uppercase tracking-widest">Omitir por ahora</div>}
+
+                                    {/* --- RAMA PROPIEDAD EXISTENTE --- */}
+                                    {step === 51 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble italic text-indigo-700">
+                                            Por favor, ingresá la <strong>dirección o barrio</strong> para buscar la propiedad.
+                                        </div>
+                                    )}
+                                    {step >= 52 && userData.searchTerm && <div className="user-bubble animate-bubble">{userData.searchTerm}</div>}
+                                    {step === 52 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            {searchResults.length === 0 ? (
+                                                <p className="text-red-500 font-bold">No encontré propiedades que coincidan. Intentá de nuevo.</p>
+                                            ) : (
+                                                <div>
+                                                    <p className="font-bold text-slate-700 mb-3">Seleccioná la correcta para asociarla al dueño:</p>
+                                                    <div className="space-y-2">
+                                                        {searchResults.map(p => (
+                                                            <div key={p.id} onClick={() => selectProperty(p)} className="role-card group bg-indigo-50/50 border-indigo-100">
+                                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Icon name="building" size={18}/></div>
+                                                                <div className="flex-1"><p className="text-sm font-black text-slate-800">{p.address}</p><p className="text-[10px] text-slate-500 font-bold uppercase">{p.neighborhood}</p></div>
+                                                                <Icon name="check-circle" size={18} className="text-slate-300 group-hover:text-indigo-600" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* --- NUEVA RAMA: CREACIÓN DE PROPIEDAD (PASOS 53-55) CORREGIDA --- */}
+                                    {step === 53 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble italic text-indigo-700">
+                                            Por favor, ingresá la <strong>dirección exacta</strong> del nuevo inmueble (Ej: Caseros 1230, Córdoba).
+                                        </div>
+                                    )}
+                                    {step >= 54 && userData.newPropAddress && <div className="user-bubble animate-bubble">{userData.newPropAddress}</div>}
+                                    
+                                    {step === 54 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble space-y-4">
+                                            <p>¡Excelente! Encontré la ubicación por Google Maps:</p>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                                                <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
+                                                    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500&q=80" alt="Propiedad" className="w-full h-full object-cover" />
+                                                    <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-md font-bold uppercase"><Icon name="map-pin" size={10} /> Geolocalizado</div>
+                                                </div>
+                                                <p className="font-black text-slate-800 text-sm leading-tight">{userData.newPropAddress}</p>
+                                            </div>
+                                            <p className="font-bold text-slate-700 pt-2">¿Querés agregar alguna característica extra? (Ej: "Con cochera").</p>
+                                            <button onClick={() => { setUserData({...userData, newPropExtras: 'Sin extras'}); typeAndGo(55); }} className="w-full py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs uppercase hover:bg-slate-100 transition-colors">No, continuar así</button>
+                                        </div>
+                                    )}
+
+                                    {step >= 55 && userData.newPropExtras && userData.newPropExtras !== 'Sin extras' && <div className="user-bubble animate-bubble">{userData.newPropExtras}</div>}
+                                    
+                                    {step === 55 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble bg-slate-50 border-slate-200">
+                                            <p className="mb-4 font-bold text-slate-800 uppercase text-[10px] tracking-widest">Resumen de Propiedad Nueva</p>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-4">
+                                                <p className="font-black text-sm text-slate-800 mb-1">{userData.newPropAddress}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase">Extras: {userData.newPropExtras}</p>
+                                            </div>
+                                            {/* Salta directo al resumen final */}
+                                            <button onClick={() => typeAndGo(80)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all">Confirmar Propiedad</button>
+                                        </div>
+                                    )}
+
+                                    {/* --- RAMA INQUILINO --- */}
+                                    {step === 60 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            <p>Perfecto. Ya tenemos los datos del Inquilino.</p>
+                                            <p className="font-bold text-slate-700 mt-2">¿Querés asociarlo a un contrato ahora o solo enviarle la invitación para su activación?</p>
+                                            <div className="mt-4 flex gap-3">
+                                                <button onClick={() => handleInqChoice('contrato')} className="flex-1 p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-emerald-500 hover:bg-emerald-50 transition-all flex flex-col items-center gap-2"><Icon name="file-signature" size={20}/><span className="text-[10px] uppercase tracking-widest text-center leading-tight">Asociar<br/>Contrato</span></button>
+                                                <button onClick={() => handleInqChoice('solo_invitar')} className="flex-1 p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-[#0055DD] hover:bg-blue-50 transition-all flex flex-col items-center gap-2"><Icon name="send" size={20}/><span className="text-[10px] uppercase tracking-widest text-center leading-tight">Solo<br/>Invitar</span></button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {step >= 61 && userData.inqChoice === 'contrato' && <div className="user-bubble animate-bubble uppercase tracking-widest">Asociar Contrato</div>}
+                                    {step >= 61 && userData.inqChoice === 'solo_invitar' && <div className="user-bubble animate-bubble uppercase tracking-widest">Solo Invitar</div>}
+
+                                    {step === 61 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            <p>¿El contrato es nuevo o ya lo tenés cargado en el sistema?</p>
+                                            <div className="mt-4 flex gap-3">
+                                                <button onClick={() => handleContractType('nuevo')} className="flex-1 p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"><Icon name="plus-circle" size={18}/><span className="text-[10px] uppercase tracking-widest">Nuevo</span></button>
+                                                <button onClick={() => handleContractType('existente')} className="flex-1 p-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:border-[#0055DD] hover:bg-blue-50 transition-all flex items-center justify-center gap-2"><Icon name="search" size={18}/><span className="text-[10px] uppercase tracking-widest">Existente</span></button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {step >= 62 && userData.inqContractType === 'existente' && <div className="user-bubble animate-bubble uppercase tracking-widest">Contrato Existente</div>}
+                                    {step >= 62 && userData.inqContractType === 'nuevo' && <div className="user-bubble animate-bubble uppercase tracking-widest">Contrato Nuevo</div>}
+
+                                    {step === 62 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble italic text-indigo-700">
+                                            Por favor, ingresá alguna referencia del contrato (Dirección de la propiedad o nombre del dueño) para buscarlo.
+                                        </div>
+                                    )}
+
+                                    {step >= 63 && userData.contractSearchTerm && <div className="user-bubble animate-bubble">{userData.contractSearchTerm}</div>}
+
+                                    {step === 63 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble">
+                                            {searchContractResults.length === 0 ? (
+                                                <p className="text-red-500 font-bold">No encontré contratos. Intentá de nuevo.</p>
+                                            ) : (
+                                                <div>
+                                                    <p className="font-bold text-slate-700 mb-3">Encontré estos contratos. Seleccioná el correcto:</p>
+                                                    <div className="space-y-2">
+                                                        {searchContractResults.map(c => (
+                                                            <div key={c.id} onClick={() => selectContract(c)} className="role-card group bg-indigo-50/50 border-indigo-100">
+                                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Icon name="file-text" size={18}/></div>
+                                                                <div className="flex-1"><p className="text-sm font-black text-slate-800">{c.address}</p><p className="text-[10px] text-slate-500 font-bold uppercase">Dueño: {c.owner}</p></div>
+                                                                <Icon name="check-circle" size={18} className="text-slate-300 group-hover:text-indigo-600" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* --- RESUMEN FINAL (PASO 80) --- */}
+                                    {step === 80 && !isTyping && (
+                                        <div className="bot-bubble animate-bubble bg-slate-50 border-slate-200">
+                                            <div className="flex items-center gap-2 mb-4 text-[#0055DD]">
+                                                <Icon name="file-text" size={16} />
+                                                <h4 className="font-black uppercase text-[10px] tracking-widest">Resumen de la Invitación</h4>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3 mb-6">
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Nombre</span><span className="text-sm font-bold text-slate-700">{userData.name} {userData.lastName}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">Email</span><span className="text-sm font-bold text-slate-700">{userData.email}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[10px] text-slate-400 uppercase font-black">WhatsApp</span><span className="text-sm font-bold text-slate-700">{userData.phone}</span></div>
+                                                <div className="flex justify-between items-center border-t border-slate-50 pt-3"><span className="text-[10px] text-slate-400 uppercase font-black">Perfil</span><span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{userData.role}</span></div>
+                                                
+                                                {/* Datos Condicionales */}
+                                                {userData.role === 'Propietario' && userData.propChoice === 'nueva' && (
+                                                    <>
+                                                        <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Propiedad Asoc.</span><span className="text-[10px] font-black text-slate-800 uppercase text-right max-w-[150px] truncate">{userData.newPropAddress}</span></div>
+                                                        <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Acción Post-Alta</span><span className="text-[10px] font-black text-emerald-600 uppercase">Activar Inmueble</span></div>
+                                                    </>
+                                                )}
+                                                {userData.role === 'Propietario' && userData.propChoice === 'existente' && userData.linkedProp && (
+                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Propiedad Asoc.</span><span className="text-[10px] font-black text-slate-800 uppercase text-right max-w-[150px] truncate">{userData.linkedProp.address}</span></div>
+                                                )}
+                                                {userData.role === 'Propietario' && userData.propChoice === 'saltar' && (
+                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Propiedad Asoc.</span><span className="text-[10px] font-black text-slate-500 uppercase">Ninguna por ahora</span></div>
+                                                )}
+
+                                                {userData.role === 'Inquilino' && userData.inqChoice === 'contrato' && userData.inqContractType === 'nuevo' && (
+                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Acción Post-Alta</span><span className="text-[10px] font-black text-emerald-600 uppercase">Alta de Contrato</span></div>
+                                                )}
+                                                {userData.role === 'Inquilino' && userData.inqChoice === 'contrato' && userData.inqContractType === 'existente' && userData.linkedContract && (
+                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Contrato Asoc.</span><span className="text-[10px] font-black text-slate-800 uppercase text-right max-w-[150px] truncate">{userData.linkedContract.address}</span></div>
+                                                )}
+                                                {userData.role === 'Inquilino' && userData.inqChoice === 'solo_invitar' && (
+                                                    <div className="flex justify-between items-center pt-2"><span className="text-[10px] text-slate-400 uppercase font-black">Acción</span><span className="text-[10px] font-black text-slate-500 uppercase">Solo Invitación</span></div>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={confirmAndSend} className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all">Confirmar y Enviar</button>
+                                                <button onClick={editData} className="px-6 py-4 bg-white text-slate-400 border border-slate-200 rounded-xl font-black text-xs uppercase hover:text-red-500 active:scale-95 transition-all">Editar</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ÉXITO */}
+                                    {step === 90 && (
+                                        <div className="space-y-6 pb-10">
+                                            <div className="bot-bubble animate-bubble bg-emerald-50 border-emerald-100">
+                                                <div className="flex items-center gap-3 text-emerald-600 mb-2">
+                                                    <Icon name="check-circle" size={24} strokeWidth={3} />
+                                                    <h4 className="font-black uppercase tracking-tighter text-lg">Operación Exitosa</h4>
+                                                </div>
+                                                <p className="text-emerald-700 font-medium leading-relaxed">
+                                                    El usuario recibirá el link para su activación biométrica.
+                                                </p>
+                                                {((userData.propChoice === 'nueva') || (userData.inqContractType === 'nuevo')) && (
+                                                    <p className="text-emerald-800 font-black text-xs mt-3 uppercase">Redirigiendo a tu próxima acción en 5s...</p>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-bubble" style={{animationDelay: '0.4s'}}>
+                                                <button onClick={resetAll} className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-indigo-600 transition-all shadow-sm group">
+                                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="user-plus" /></div>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nuevo Usuario</span>
+                                                </button>
+                                                <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-[#0055DD] transition-all shadow-sm group">
+                                                    <div className="w-12 h-12 bg-blue-50 text-[#0055DD] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="building-2" /></div>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nueva Propiedad</span>
+                                                </button>
+                                                <button className="flex flex-col items-center gap-3 p-6 bg-white border-2 border-slate-50 rounded-[2rem] hover:border-emerald-600 transition-all shadow-sm group">
+                                                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="file-text" /></div>
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Nuevo Contrato</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            )}
+
+                            {isTyping && (
+                                <div className="bot-bubble flex items-center gap-1.5 py-4 w-max">
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                </div>
+                            )}
                         </div>
-                    </div>
+
+                        {/* BARRA DE INPUT CONTEXTUAL */}
+                        {showInput && !isMassive && (
+                            <footer className="p-10 border-t border-slate-50 bg-white/80 backdrop-blur-md sticky bottom-0 z-40">
+                                <div className="flex gap-4 max-w-2xl mx-auto">
+                                    <input 
+                                        type={step === 2 ? "email" : "text"}
+                                        placeholder={
+                                            step === 0 ? "Escribe su Nombre..." :
+                                            step === 1 ? "Su Apellido..." :
+                                            step === 2 ? "Correo Electrónico..." :
+                                            step === 3 ? "Teléfono o WhatsApp..." : 
+                                            (step === 51 || step === 52) ? "Ej: Caseros, Alberdi..." : 
+                                            step === 53 ? "Ej: Caseros 1230, Córdoba..." : 
+                                            step === 54 ? "Ej: Cochera, pileta, seguridad... o deja vacío" :
+                                            (step === 62 || step === 63) ? "Ej: Dirección o dueño..." : ""
+                                        }
+                                        value={
+                                            step === 0 ? userData.name :
+                                            step === 1 ? userData.lastName :
+                                            step === 2 ? userData.email :
+                                            step === 3 ? userData.phone : 
+                                            (step === 51 || step === 52 || step === 62 || step === 63) ? currentSearch : 
+                                            step === 53 ? userData.newPropAddress : 
+                                            step === 54 ? userData.newPropExtras : ""
+                                        }
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            if(step === 0) setUserData({...userData, name: v});
+                                            else if(step === 1) setUserData({...userData, lastName: v});
+                                            else if(step === 2) setUserData({...userData, email: v});
+                                            else if(step === 3) setUserData({...userData, phone: v});
+                                            else if(step === 51 || step === 52 || step === 62 || step === 63) setCurrentSearch(v);
+                                            else if(step === 53) setUserData({...userData, newPropAddress: v});
+                                            else if(step === 54) setUserData({...userData, newPropExtras: v});
+                                        }}
+                                        className="input-chat shadow-inner"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                if (step < 4) handleNextStep();
+                                                else if (step === 51 || step === 52) executePropSearch();
+                                                else if (step === 53) submitNewPropAddress();
+                                                else if (step === 54) submitNewPropExtras();
+                                                else if (step === 62 || step === 63) executeContractSearch();
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            if (step < 4) handleNextStep();
+                                            else if (step === 51 || step === 52) executePropSearch();
+                                            else if (step === 53) submitNewPropAddress();
+                                            else if (step === 54) submitNewPropExtras();
+                                            else if (step === 62 || step === 63) executeContractSearch();
+                                        }}
+                                        className="bg-indigo-600 text-white w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Icon name={step === 51 || step === 52 || step === 62 || step === 63 ? "search" : "send"} />
+                                    </button>
+                                </div>
+                            </footer>
+                        )}
+                    </main>
                 </div>
             );
         }
