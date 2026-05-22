@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre Admin - Directorio de Usuarios</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel para procesar JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-blue: #0055DD;
+            --brand-dark: #0D1B4B;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f1f5f9;
+            color: #1e293b;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilo de fila de tabla interactiva */
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+            transform: scale(1.001);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        // --- MOCK DE DATOS (Usuarios ordenados alfabéticamente en la lógica) ---
+        const initialUsers = [
+            { id: 1, name: "Ana Silva", role: "Inquilino", email: "ana.silva@email.com", phone: "+54 9 351 111-2222", score: 850, properties: ["Belgrano 880, 2A"], contractStatus: "Activo" },
+            { id: 2, name: "Carlos Paz", role: "Propietario", email: "carlos.paz@inversiones.com", phone: "+54 9 351 333-4444", score: 920, properties: ["Caseros 1230, 4B", "Av. Colón 450", "Duarte Quirós 100"], contractStatus: "Activo" },
+            { id: 3, name: "Damián Martínez", role: "Inquilino", email: "dibu@afa.com", phone: "+54 9 11 5555-6666", score: 890, properties: ["San Martín 22"], contractStatus: "En Firma" },
+            { id: 4, name: "Marcos Galperin", role: "Inquilino", email: "marcos@mercadolibre.com", phone: "+54 9 11 4444-5555", score: 820, properties: ["Caseros 1230, 4B"], contractStatus: "Activo" },
+            { id: 5, name: "Roberto Daer", role: "Propietario", email: "roberto@daer.com", phone: "+54 9 351 777-8888", score: 950, properties: ["Belgrano 880, 2A", "San Martín 22"], contractStatus: "En Firma" },
+            { id: 6, name: "Sofía López", role: "Inquilino", email: "sofia.lopez@email.com", phone: "+54 9 351 999-0000", score: 680, properties: ["Av. Colón 450"], contractStatus: "Mora" },
+            { id: 7, name: "Valentina Ruiz", role: "Propietario", email: "v.ruiz@email.com", phone: "+54 9 351 222-3333", score: 880, properties: ["Sin asignar"], contractStatus: "Pendiente" }
+        ];
+
+        function DptoLibreUsersAdmin() {
+            const [filter, setFilter] = useState('Todos'); // 'Todos', 'Inquilino', 'Propietario'
+            const [search, setSearch] = useState('');
+
+            // Lógica de Filtrado y Orden Alfabético
+            const filteredUsers = initialUsers
+                .filter(u => filter === 'Todos' || u.role === filter)
+                .filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            // --- COMPONENTES AUXILIARES ---
+            const ScoreBadge = ({ score }) => {
+                let colorClass = "text-emerald-600 bg-emerald-50";
+                if (score < 800) colorClass = "text-amber-600 bg-amber-50";
+                if (score < 700) colorClass = "text-red-600 bg-red-50";
+                
+                return (
+                    <div className="flex flex-col items-center">
+                        <span className={`text-sm font-black px-2 py-0.5 rounded-lg ${colorClass}`}>
+                            {score}
+                        </span>
+                        <span className="text-[8px] font-black uppercase text-slate-400 mt-1">Pts</span>
+                    </div>
+                );
+            };
+
+            const StatusBadge = ({ status }) => {
+                const styles = {
+                    "Activo": "bg-emerald-100 text-emerald-700 border-emerald-200",
+                    "En Firma": "bg-indigo-100 text-indigo-700 border-indigo-200",
+                    "Pendiente": "bg-slate-100 text-slate-500 border-slate-200",
+                    "Mora": "bg-red-100 text-red-700 border-red-200 animate-pulse"
+                };
+                return (
+                    <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border ${styles[status]}`}>
+                        {status}
+                    </span>
+                );
+            };
+
+            // --- LAYOUT ESTRUCTURAL ---
+            const Sidebar = () => (
+                <aside className="w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800 p-6 fixed left-0 top-0 z-50">
+                    <div className="flex items-center gap-3 mb-10 px-2">
+                        <div className="w-10 h-10 bg-[#0055DD] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">d</div>
+                        <div>
+                            <h1 className="font-black tracking-tighter text-xl leading-none">DptoLibre</h1>
+                            <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mt-1">Secretaría Digital</p>
+                        </div>
+                    </div>
+                    
+                    <nav className="flex-1 space-y-2">
+                        {[
+                            { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                            { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+                            { id: 'propiedades', label: 'Propiedades', icon: 'building' },
+                            { id: 'tesoreria', label: 'Tesorería', icon: 'wallet' },
+                            { id: 'tickets', label: 'Tickets', icon: 'wrench' },
+                        ].map(item => (
+                            <button 
+                                key={item.id} 
+                                className={`w-full flex items-center gap-3 p-4 rounded-xl font-bold transition-all ${item.id === 'usuarios' ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                            >
+                                <Icon name={item.icon} size={20} />
+                                <span>{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-700 flex items-center gap-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" className="w-10 h-10 rounded-xl bg-slate-700" alt="Admin" />
+                        <div className="overflow-hidden">
+                            <p className="text-xs font-bold text-white truncate">Inmobiliaria Raíces</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Administrador</p>
+                        </div>
+                    </div>
+                </aside>
+            );
+
+            const Header = () => (
+                <header className="h-24 bg-white border-b border-slate-200 flex justify-between items-center px-10 fixed top-0 right-0 left-72 z-40 shadow-sm">
+                    <div>
+                        <h2 className="text-2xl font-black text-[#0D1B4B] tracking-tight">Directorio de Usuarios</h2>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Gestión integral de cartera</p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="relative">
+                            <Icon name="search" className="absolute left-4 top-3 text-slate-300" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Buscar por nombre o email..." 
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm w-80 focus:ring-2 focus:ring-[#0055DD] outline-none font-medium transition-all" 
+                            />
+                        </div>
+                        <div className="flex gap-3 border-l border-slate-200 pl-6">
+                            <button className="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
+                                <Icon name="download" size={14} /> Exportar
+                            </button>
+                            <button className="bg-[#0055DD] text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
+                                <Icon name="plus" size={16} /> Nuevo Usuario
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            );
+
+            // --- CONTENIDO PRINCIPAL ---
+            return (
+                <div className="flex h-screen w-full bg-[#f8fafc] font-sans overflow-hidden">
+                    <Sidebar />
+                    
+                    <div className="flex-1 flex flex-col pl-72">
+                        <Header />
+
+                        <main className="flex-1 overflow-y-auto no-scrollbar pt-24 p-10 animate-in">
+                            
+                            {/* Filtros */}
+                            <div className="flex justify-between items-end mb-8">
+                                <div className="flex gap-2 bg-slate-200/50 p-1.5 rounded-2xl">
+                                    {['Todos', 'Propietario', 'Inquilino'].map(f => (
+                                        <button 
+                                            key={f}
+                                            onClick={() => setFilter(f)}
+                                            className={`px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${filter === f ? 'bg-white text-[#0D1B4B] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            {f} {f === 'Todos' ? `(${initialUsers.length})` : ''}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+                                    <Icon name="arrow-down-a-z" size={14} /> Ordenado A-Z
+                                </div>
+                            </div>
+
+                            {/* Tabla de Usuarios */}
+                            <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-slate-50/50 border-b border-slate-100">
+                                        <tr>
+                                            <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Usuario y Contacto</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Perfil</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Reputación</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Activos Relacionados</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Estado Contractual</th>
+                                            <th className="p-6"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {filteredUsers.map(user => (
+                                            <tr key={user.id} className="table-row-hover transition-colors cursor-pointer group">
+                                                {/* Columna: Usuario y Contacto */}
+                                                <td className="p-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg border-2 ${user.role === 'Propietario' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                                                            {user.name.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-slate-800 text-sm">{user.name}</p>
+                                                            <div className="flex flex-col mt-1 gap-0.5">
+                                                                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><Icon name="mail" size={10}/> {user.email}</span>
+                                                                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><Icon name="phone" size={10}/> {user.phone}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* Columna: Perfil */}
+                                                <td className="p-6 text-center">
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <Icon name={user.role === 'Propietario' ? 'shield-check' : 'user'} className={user.role === 'Propietario' ? 'text-indigo-500' : 'text-[#0055DD]'} size={20} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{user.role}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Columna: Score */}
+                                                <td className="p-6 text-center">
+                                                    <ScoreBadge score={user.score} />
+                                                </td>
+
+                                                {/* Columna: Propiedades */}
+                                                <td className="p-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500">
+                                                            <Icon name="home" size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-bold text-slate-700">{user.properties[0]}</p>
+                                                            {user.properties.length > 1 && (
+                                                                <p className="text-[9px] font-black text-[#0055DD] uppercase mt-0.5 bg-blue-50 px-2 py-0.5 rounded w-max">
+                                                                    + {user.properties.length - 1} propiedades más
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* Columna: Estado de Contrato */}
+                                                <td className="p-6 text-center">
+                                                    <StatusBadge status={user.contractStatus} />
+                                                </td>
+
+                                                {/* Columna: Acciones */}
+                                                <td className="p-6 text-right">
+                                                    <button className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0055DD] hover:text-white hover:border-[#0055DD] transition-all opacity-0 group-hover:opacity-100 flex items-center gap-2 ml-auto">
+                                                        Abrir Legajo <Icon name="arrow-right" size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Empty State en caso de búsqueda sin resultados */}
+                                {filteredUsers.length === 0 && (
+                                    <div className="p-20 flex flex-col items-center justify-center text-center">
+                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                            <Icon name="search-x" size={40} className="text-slate-300" />
+                                        </div>
+                                        <h3 className="text-lg font-black text-slate-700">Ningún usuario encontrado</h3>
+                                        <p className="text-sm text-slate-400 mt-2">Intenta cambiar los filtros o el término de búsqueda.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DptoLibreUsersAdmin />);
+    </script>
+</body>
+</html>
