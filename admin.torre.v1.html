@@ -4,87 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DptoLibre Admin - Torre de Control</title>
+    
+    <!-- Librerías necesarias para que React funcione en HTML puro -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-[#F4F7F9] font-sans">
+<body class="bg-gray-100 font-sans">
+    
+    <!-- Aquí es donde se monta la App de React -->
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
-        const { LayoutDashboard, FileText, Users, Building2, Settings, Plus, Bell, Search, User, Gavel, TrendingUp, Zap, Clock } = lucide;
+        // Extraemos los componentes de Lucide
+        const { Shield, RefreshCw, AlertTriangle, FileText, Users } = lucide;
 
-        function DashboardApp() {
-            const [activeView, setActiveView] = useState('inicio');
+        function App() {
+            const [status, setStatus] = React.useState('Activo');
+            const [logs, setLogs] = React.useState(['Sistema inicializado.']);
 
-            const SidebarItem = ({ id, label, icon: Icon }) => (
-                <button 
-                    onClick={() => setActiveView(id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeView === id ? 'bg-[#0055DD] text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                    <Icon size={18} /> {label}
-                </button>
-            );
+            const addLog = (msg) => {
+                const timestamp = new Date().toLocaleTimeString();
+                setLogs(prev => [`${timestamp} - ${msg}`, ...prev].slice(0, 5));
+            };
+
+            const handleRestart = () => {
+                setStatus('Reiniciando...');
+                addLog('Iniciando ciclo de mantenimiento...');
+                setTimeout(() => {
+                    setStatus('Activo');
+                    addLog('Sistema restaurado correctamente.');
+                }, 2000);
+            };
 
             return (
-                <div className="flex h-screen w-full">
-                    {/* Sidebar */}
-                    <aside className="w-64 bg-[#0A142F] text-white flex flex-col p-6">
-                        <div className="flex items-center gap-2 mb-10">
-                            <div className="bg-[#0055DD] p-2 rounded-lg font-black text-white">DL</div>
-                            <span className="font-black text-xl tracking-tighter">dptolibre</span>
+                <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
+                    <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <Shield className="text-blue-600" /> Blindato Admin
+                    </h1>
+                    
+                    <div className="mb-6 p-4 bg-gray-50 rounded-xl flex justify-between items-center border">
+                        <span className="font-semibold text-gray-700">Estado actual:</span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${status === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {status}
+                        </span>
+                    </div>
+
+                    <button 
+                        onClick={handleRestart}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition font-medium"
+                    >
+                        <RefreshCw size={18} /> Reiniciar Sistema
+                    </button>
+
+                    <div className="mt-8">
+                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Actividad reciente</h2>
+                        <div className="space-y-2">
+                            {logs.map((log, index) => (
+                                <p key={index} className="text-sm text-gray-600 bg-gray-50 p-2 rounded border-l-2 border-blue-500">
+                                    {log}
+                                </p>
+                            ))}
                         </div>
-                        <nav className="flex-1 space-y-2">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Gestión</p>
-                            <SidebarItem id="inicio" label="Torre de Control" icon={LayoutDashboard} />
-                            <SidebarItem id="contratos" label="Contratos" icon={FileText} />
-                            <SidebarItem id="usuarios" label="Usuarios" icon={Users} />
-                            <SidebarItem id="propiedades" label="Propiedades" icon={Building2} />
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mt-6 mb-2">Configuración</p>
-                            <SidebarItem id="admin" label="Administración" icon={Settings} />
-                        </nav>
-                    </aside>
-
-                    {/* Main */}
-                    <div className="flex-1 flex flex-col">
-                        <header className="h-20 bg-white border-b border-slate-200 flex justify-between items-center px-8">
-                            <h2 className="text-sm font-black uppercase text-slate-400 tracking-widest">{activeView}</h2>
-                            <div className="flex items-center gap-4">
-                                <button className="bg-[#0055DD] text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 shadow-lg shadow-blue-500/30">
-                                    <Plus size={16} /> Crear Nuevo
-                                </button>
-                                <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                            </div>
-                        </header>
-
-                        <main className="p-8 overflow-y-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase">Recaudación Bruta</p>
-                                    <h3 className="text-2xl font-black mt-1">$12.540.800</h3>
-                                    <div className="text-[10px] font-bold text-emerald-500 mt-2 flex items-center gap-1"><TrendingUp size={12}/> +$12k hoy</div>
-                                </div>
-                                <div className="bg-slate-900 p-6 rounded-3xl text-white">
-                                    <p className="text-[10px] font-black text-indigo-400 uppercase">Mis Ganancias</p>
-                                    <h3 className="text-2xl font-black mt-1 text-[#00D1FF]">$840.500</h3>
-                                </div>
-                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase">Saldo de Dueños</p>
-                                    <h3 className="text-2xl font-black mt-1">$7.820.000</h3>
-                                    <div className="text-[10px] font-bold text-amber-500 mt-2 flex items-center gap-1"><Clock size={12}/> 14 Dueños a liquidar</div>
-                                </div>
-                            </div>
-                        </main>
                     </div>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<DashboardApp />);
+        // --- INICIALIZADOR ---
+        // Esto es lo que te faltaba: montar la app en el div 'root'
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
     </script>
 </body>
 </html>
