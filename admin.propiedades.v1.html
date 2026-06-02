@@ -1,87 +1,94 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre - Gestión de Propiedades</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-slate-50">
-    <div id="root"></div>
+import React, { useState, useMemo } from 'react';
+import { 
+  LayoutGrid, List, Search, Plus, Building2, 
+  Settings, Users, Bell, ChevronDown, Filter, LogOut
+} from 'lucide-react';
 
-    <script type="text/babel">
-        const { useState, useMemo } = React;
+const initialData = [
+  { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Con Contrato", progress: 100, photo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300" },
+  { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Reservado", progress: 75, photo: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300" },
+  { id: 3, address: "Av. Colón 450", owner: "Lucía Méndez", status: "Vacante", progress: 25, photo: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=300" },
+  { id: 4, address: "San Martín 22", owner: "Juan Pérez", status: "Pausada", progress: 50, photo: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300" }
+];
 
-        const initialData = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Con Contrato", progress: 100, photo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200" },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Reservado", progress: 75, photo: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200" },
-            { id: 3, address: "Av. Colón 450", owner: "Lucía Méndez", status: "Vacante", progress: 25, photo: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200" },
-            { id: 4, address: "San Martín 22", owner: "Juan Pérez", status: "Pausada", progress: 50, photo: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200" }
-        ];
+export default function App() {
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState("grid");
+  const [filter, setFilter] = useState("Todos");
 
-        function App() {
-            const [search, setSearch] = useState("");
-            const [view, setView] = useState("grid"); // 'grid' o 'list'
-            const [filter, setFilter] = useState("Todos");
-            
-            const filteredData = useMemo(() => {
-                return initialData.filter(p => 
-                    (filter === "Todos" || p.status === filter) &&
-                    (p.address.toLowerCase().includes(search.toLowerCase()) || p.owner.toLowerCase().includes(search.toLowerCase()))
-                );
-            }, [search, filter]);
+  const filteredData = useMemo(() => {
+    return initialData.filter(p => 
+      (filter === "Todos" || p.status === filter) &&
+      (p.address.toLowerCase().includes(search.toLowerCase()) || p.owner.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [search, filter]);
 
-            return (
-                <div className="p-8 max-w-6xl mx-auto">
-                    <header className="flex justify-between items-center mb-8">
-                        <div>
-                            <h1 className="text-2xl font-black">Mis Propiedades</h1>
-                            <p className="text-slate-500 text-sm">Gestiona y filtra tus unidades.</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => setView('grid')} className={`p-2 rounded ${view === 'grid' ? 'bg-slate-900 text-white' : 'bg-white'}`}>Grid</button>
-                            <button onClick={() => setView('list')} className={`p-2 rounded ${view === 'list' ? 'bg-slate-900 text-white' : 'bg-white'}`}>Lista</button>
-                        </div>
-                    </header>
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* Sidebar */}
+      <aside className="w-64 bg-slate-900 text-white flex flex-col p-6 hidden md:flex">
+        <div className="flex items-center gap-2 mb-10">
+          <div className="bg-blue-500 p-2 rounded-lg"><Building2 size={20} /></div>
+          <span className="font-bold text-lg tracking-tight">DptoLibre</span>
+        </div>
+        <nav className="flex-1 space-y-4">
+          <a href="#" className="flex items-center gap-3 text-blue-400 font-medium"><LayoutGrid size={20} /> Dashboard</a>
+          <a href="#" className="flex items-center gap-3 hover:text-slate-300"><Building2 size={20} /> Propiedades</a>
+          <a href="#" className="flex items-center gap-3 hover:text-slate-300"><Users size={20} /> Propietarios</a>
+          <a href="#" className="flex items-center gap-3 hover:text-slate-300"><Settings size={20} /> Configuración</a>
+        </nav>
+        <button className="flex items-center gap-3 text-slate-400 hover:text-white"><LogOut size={20} /> Salir</button>
+      </aside>
 
-                    <div className="flex gap-4 mb-6">
-                        <input 
-                            type="text" 
-                            placeholder="Buscar por dirección o dueño..." 
-                            className="flex-1 p-3 rounded-xl border border-slate-200 outline-none"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        <select onChange={(e) => setFilter(e.target.value)} className="p-3 rounded-xl border border-slate-200">
-                            <option>Todos</option>
-                            <option>Vacante</option>
-                            <option>Reservado</option>
-                            <option>Con Contrato</option>
-                            <option>Pausada</option>
-                        </select>
-                    </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+          <div className="relative w-96">
+            <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+            <input 
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-100 rounded-lg py-2.5 pl-10 pr-4 outline-none focus:ring-2 ring-blue-500" 
+              placeholder="Buscar unidad o dueño..." 
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <Bell size={20} className="text-slate-500" />
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">AS</div>
+          </div>
+        </header>
 
-                    <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"}>
-                        {filteredData.map(p => (
-                            <div key={p.id} className={`bg-white p-4 rounded-xl border flex ${view === 'list' ? 'items-center gap-4' : 'flex-col gap-2'}`}>
-                                <img src={p.photo} className={view === 'grid' ? "w-full h-32 object-cover rounded-lg" : "w-16 h-16 rounded"} />
-                                <div className="flex-1">
-                                    <h3 className="font-bold">{p.address}</h3>
-                                    <p className="text-xs text-slate-500">{p.owner}</p>
-                                    <span className="text-[10px] bg-slate-100 px-2 py-1 rounded">{p.status}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+        {/* Workspace */}
+        <div className="p-8 overflow-y-auto">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-2xl font-bold">Gestión de Propiedades</h2>
+              <p className="text-slate-500">Administra tus unidades, contratos y estados.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setView('grid')} className={`p-2 rounded-lg ${view === 'grid' ? 'bg-white shadow' : ''}`}><LayoutGrid size={20} /></button>
+              <button onClick={() => setView('list')} className={`p-2 rounded-lg ${view === 'list' ? 'bg-white shadow' : ''}`}><List size={20} /></button>
+              <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">
+                <Plus size={18} /> Nueva
+              </button>
+            </div>
+          </div>
+
+          {/* Grid/List Display */}
+          <div className={view === 'grid' ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-4"}>
+            {filteredData.map(p => (
+              <div key={p.id} className={`bg-white border border-slate-200 rounded-xl p-4 flex ${view === 'list' ? 'items-center gap-6' : 'flex-col gap-4'}`}>
+                <img src={p.photo} className={`object-cover rounded-lg ${view === 'grid' ? 'w-full h-40' : 'w-24 h-24'}`} />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{p.address}</h3>
+                  <p className="text-sm text-slate-500 mb-2">{p.owner}</p>
+                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">{p.status}</span>
                 </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
