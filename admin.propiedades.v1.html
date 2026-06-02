@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre Admin - Gestión de Propiedades</title>
+    <title>DptoLibre - Gestión Integral de Propiedades</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .slide-in { animation: slide 0.3s ease-out forwards; }
+        @keyframes slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body>
@@ -24,88 +23,69 @@
         const { useState } = React;
 
         const initialProperties = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Alquilada", price: "$450.000", features: "2 Dorm, 1 Baño, Balcón", contract: "CTR-001", lastUpdate: "2026-05-20" },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Alquilada", price: "$600.000", features: "3 Dorm, 2 Baños, Cochera", contract: "CTR-9901", lastUpdate: "2026-05-22" },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", status: "Vacante", price: "$320.000", features: "1 Dorm, Monoambiente", contract: "Sin contrato", lastUpdate: "2026-05-18" },
-            { id: 4, address: "San Martín 22", owner: "Juan Pérez", status: "En Mantenimiento", price: "$0", features: "Local Comercial", contract: "MT-005", lastUpdate: "2026-05-21" }
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Con Contrato", description: "Departamento luminoso frente a plaza principal.", gps: "https://maps.google.com/?q=-31.416,-64.183", photos: ["https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400"], progress: 100 },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Reservado", description: "Moderno, con cochera y seguridad 24hs.", gps: "https://maps.google.com/?q=-31.420,-64.185", photos: ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400"], progress: 75 },
+            { id: 3, address: "Av. Colón 450", owner: "Lucía Méndez", status: "Vacante", description: "Monoambiente funcional, excelente ubicación.", gps: "https://maps.google.com/?q=-31.413,-64.190", photos: ["https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400"], progress: 25 },
+            { id: 4, address: "San Martín 22", owner: "Juan Pérez", status: "Pausada", description: "Local comercial en planta baja.", gps: "https://maps.google.com/?q=-31.410,-64.180", photos: ["https://images.unsplash.com/photo-1497366216548-37526070297c?w=400"], progress: 50 }
         ];
 
+        function StatusIndicator({ status, progress }) {
+            const colors = { "Vacante": "bg-emerald-500", "Reservado": "bg-blue-500", "Con Contrato": "bg-indigo-600", "Pausada": "bg-slate-400" };
+            return (
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex justify-between text-[10px] font-black uppercase">
+                        <span>{status}</span>
+                        <span>{progress}%</span>
+                    </div>
+                    <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${colors[status]}`} style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+            );
+        }
+
         function App() {
-            const [filter, setFilter] = useState('Todos');
-            const [search, setSearch] = useState('');
-            const [selectedProp, setSelectedProp] = useState(null);
-
-            const filtered = initialProperties
-                .filter(p => filter === 'Todos' || p.status === filter)
-                .filter(p => p.address.toLowerCase().includes(search.toLowerCase()) || p.owner.toLowerCase().includes(search.toLowerCase()))
-                .sort((a, b) => new Date(b.lastUpdate) - new Date(a.lastUpdate));
-
-            const StatusBadge = ({ status }) => {
-                const colors = { "Alquilada": "bg-emerald-100 text-emerald-700", "Vacante": "bg-amber-100 text-amber-700", "En Mantenimiento": "bg-red-100 text-red-700" };
-                return <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase ${colors[status]}`}>{status}</span>;
-            };
+            const [selected, setSelected] = useState(null);
+            const [data, setData] = useState(initialProperties);
 
             return (
-                <div className="flex h-screen bg-slate-50">
-                    {/* Sidebar simplificado */}
-                    <aside className="w-72 bg-slate-900 p-6 flex flex-col text-white">
-                        <h1 className="font-black text-xl mb-10">DptoLibre</h1>
-                        <nav className="space-y-4">
-                            {['Dashboard', 'Usuarios', 'Propiedades'].map(item => (
-                                <button key={item} className={`w-full p-4 rounded-xl text-left font-bold ${item === 'Propiedades' ? 'bg-[#0055DD]' : 'text-slate-400'}`}>{item}</button>
-                            ))}
-                        </nav>
+                <div className="flex h-screen">
+                    <aside className="w-64 bg-slate-900 p-8 text-white flex flex-col justify-between">
+                        <h1 className="font-black text-2xl">DptoLibre</h1>
+                        <p className="text-slate-500 text-xs">Gestión Interna v2.4</p>
                     </aside>
 
-                    <main className="flex-1 p-10 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-2xl font-black text-slate-800">Propiedades</h2>
-                            <input 
-                                className="p-3 w-80 rounded-xl bg-white shadow-sm border border-slate-200"
-                                placeholder="Buscar por dirección o dueño..."
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 mb-6">
-                            {['Todos', 'Alquilada', 'Vacante', 'En Mantenimiento'].map(f => (
-                                <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase ${filter === f ? 'bg-[#0055DD] text-white' : 'bg-white border'}`}>{f}</button>
-                            ))}
-                        </div>
-
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
-                            {filtered.map(p => (
-                                <div key={p.id} className="flex items-center p-6 border-b border-slate-100 hover:bg-slate-50 transition-all">
-                                    <div className="w-16 h-16 bg-slate-200 rounded-xl mr-6"></div>
-                                    <div className="flex-1">
-                                        <p className="font-black text-slate-800">{p.address}</p>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Dueño: {p.owner}</p>
-                                    </div>
-                                    <div className="mr-10"><StatusBadge status={p.status} /></div>
-                                    <button onClick={() => setSelectedProp(p)} className="px-6 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-xs">Abrir Legajo</button>
+                    <main className="flex-1 p-10 overflow-auto">
+                        <h2 className="text-3xl font-black mb-8">Listado de Propiedades</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {data.map(p => (
+                                <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition-all">
+                                    <img src={p.photos[0]} className="w-full h-32 object-cover rounded-xl mb-4" />
+                                    <h3 className="font-black text-lg">{p.address}</h3>
+                                    <p className="text-slate-500 text-sm mb-4">{p.owner}</p>
+                                    <StatusIndicator status={p.status} progress={p.progress} />
+                                    <button onClick={() => setSelected(p)} className="mt-6 w-full py-2 bg-slate-900 text-white rounded-lg text-xs font-bold">Abrir Legajo</button>
                                 </div>
                             ))}
                         </div>
                     </main>
 
-                    {/* Modal Legajo */}
-                    {selectedProp && (
-                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-end">
-                            <div className="w-[500px] bg-white h-full shadow-2xl slide-in-right p-8 overflow-y-auto">
-                                <div className="flex justify-between mb-8">
-                                    <h2 className="text-xl font-black">Legajo de Propiedad</h2>
-                                    <button onClick={() => setSelectedProp(null)} className="font-bold">Cerrar</button>
+                    {selected && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end">
+                            <div className="w-[450px] bg-white h-full shadow-2xl p-8 slide-in overflow-y-auto">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="font-black text-xl">Detalle de Propiedad</h2>
+                                    <button onClick={() => setSelected(null)} className="text-slate-400">X</button>
                                 </div>
-                                <div className="bg-slate-100 h-64 rounded-2xl mb-6"></div>
-                                <h3 className="font-black text-lg mb-2">{selectedProp.address}</h3>
-                                <p className="text-slate-500 mb-6">{selectedProp.features}</p>
-                                
-                                <div className="bg-slate-50 p-4 rounded-xl mb-6">
-                                    <p className="text-[10px] uppercase font-black text-slate-400">Dueño actual</p>
-                                    <p className="font-bold text-slate-800">{selectedProp.owner}</p>
+                                <img src={selected.photos[0]} className="w-full h-56 object-cover rounded-2xl mb-6" />
+                                <div className="space-y-4">
+                                    <div><label className="text-[10px] font-black uppercase text-slate-400">Descripción</label><p className="text-sm">{selected.description}</p></div>
+                                    <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl">
+                                        <div><label className="text-[10px] font-black uppercase text-slate-400">Dueño</label><p className="font-bold">{selected.owner}</p></div>
+                                        <button className="text-[10px] font-black underline">EDITAR</button>
+                                    </div>
+                                    <a href={selected.gps} target="_blank" className="block text-center py-3 bg-slate-100 font-bold text-xs rounded-xl hover:bg-slate-200">ABRIR MAPA (GPS)</a>
                                 </div>
-                                
-                                <button className="w-full py-4 bg-[#0055DD] text-white rounded-xl font-black uppercase text-xs">Editar Propiedad</button>
                             </div>
                         </div>
                     )}
