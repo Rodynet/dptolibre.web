@@ -1,86 +1,66 @@
-import React, { useState } from 'react';
-import { 
-  LayoutDashboard, Home, Users, Settings, 
-  Search, Bell, ChevronDown, Plus, Menu, X 
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre - Gestión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; }
+        .sidebar { transition: width 0.3s ease; }
+        .main-content { transition: margin-left 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
 
-export default function App() {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
-  return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans">
-      {/* Sidebar - Look and Feel definido */}
-      <aside className={`bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} flex flex-col`}>
-        <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shrink-0">D</div>
-          {isSidebarOpen && <span className="ml-3 font-bold text-lg tracking-tight">DptoLibre</span>}
-        </div>
+    <!-- Estructura Principal -->
+    <div class="flex h-screen overflow-hidden">
         
-        <nav className="flex-1 p-4 space-y-2">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" isOpen={isSidebarOpen} active />
-          <NavItem icon={<Home size={20}/>} label="Propiedades" isOpen={isSidebarOpen} />
-          <NavItem icon={<Users size={20}/>} label="Propietarios" isOpen={isSidebarOpen} />
-        </nav>
-
-        <div className="p-4 border-t border-slate-100">
-          <NavItem icon={<Settings size={20}/>} label="Configuración" isOpen={isSidebarOpen} />
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="lg:hidden text-slate-600">
-            <Menu size={24} />
-          </button>
-          <div className="relative w-96 hidden md:block">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar unidad, contrato..." 
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          <div className="flex items-center gap-4">
-            <Bell size={20} className="text-slate-400 cursor-pointer hover:text-slate-600" />
-            <div className="flex items-center gap-2 cursor-pointer border-l pl-4">
-              <div className="w-8 h-8 rounded-full bg-slate-200" />
-              <ChevronDown size={16} className="text-slate-400" />
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 flex flex-col">
+            <div class="h-16 flex items-center px-6 border-b border-gray-100 font-bold text-blue-600 text-xl">
+                DptoLibre
             </div>
-          </div>
-        </header>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" class="block p-3 bg-blue-50 text-blue-600 rounded-lg font-medium">Dashboard</a>
+                <a href="#" class="block p-3 text-gray-600 hover:bg-gray-50 rounded-lg">Propiedades</a>
+                <a href="#" class="block p-3 text-gray-600 hover:bg-gray-50 rounded-lg">Propietarios</a>
+            </nav>
+        </aside>
 
-        {/* Content area */}
-        <main className="flex-1 p-8 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Resumen de Gestión</h1>
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-              <Plus size={16} /> Agregar Propiedad
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {/* Cards Placeholder */}
-             {[1,2,3,4,5,6].map((i) => (
-               <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow">
-                 <div className="h-32 bg-slate-100 rounded-lg mb-4" />
-                 <div className="h-4 bg-slate-100 rounded w-3/4 mb-2" />
-                 <div className="h-3 bg-slate-50 rounded w-1/2" />
-               </div>
-             ))}
-          </div>
+        <!-- Contenido -->
+        <main class="main-content flex-1 flex flex-col overflow-y-auto">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
+                <h2 class="text-lg font-semibold text-gray-700">Resumen</h2>
+                <div class="flex items-center gap-4">
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                        Nueva Gestión
+                    </button>
+                </div>
+            </header>
+
+            <div class="p-8">
+                <div id="app-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Aquí se inyectan las tarjetas dinámicamente -->
+                </div>
+            </div>
         </main>
-      </div>
     </div>
-  );
-}
 
-function NavItem({ icon, label, isOpen, active }) {
-  return (
-    <div className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${active ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
-      {icon}
-      {isOpen && <span className="ml-3 font-medium text-sm">{label}</span>}
-    </div>
-  );
-}
+    <script>
+        // Simulación de carga de datos para evitar errores de renderizado
+        const data = [1, 2, 3, 4, 5, 6];
+        const container = document.getElementById('app-container');
+        
+        container.innerHTML = data.map(i => `
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="h-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center text-gray-400">
+                    Imagen ${i}
+                </div>
+                <h3 class="font-bold text-gray-800">Propiedad #${i}</h3>
+                <p class="text-sm text-gray-500">Ubicación y detalles básicos</p>
+            </div>
+        `).join('');
+    </script>
+</body>
+</html>
