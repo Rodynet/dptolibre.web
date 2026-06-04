@@ -3,63 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre - Gestión</title>
+    <title>Centro de Comando - DptoLibre</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: sans-serif; }
-        .sidebar { transition: width 0.3s ease; }
-        .main-content { transition: margin-left 0.3s ease; }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 text-gray-900 font-sans">
 
-    <!-- Estructura Principal -->
-    <div class="flex h-screen overflow-hidden">
-        
-        <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 flex flex-col">
-            <div class="h-16 flex items-center px-6 border-b border-gray-100 font-bold text-blue-600 text-xl">
-                DptoLibre
-            </div>
-            <nav class="flex-1 p-4 space-y-2">
-                <a href="#" class="block p-3 bg-blue-50 text-blue-600 rounded-lg font-medium">Dashboard</a>
-                <a href="#" class="block p-3 text-gray-600 hover:bg-gray-50 rounded-lg">Propiedades</a>
-                <a href="#" class="block p-3 text-gray-600 hover:bg-gray-50 rounded-lg">Propietarios</a>
+    <div class="min-h-screen flex">
+        <!-- Sidebar Fijo -->
+        <aside class="w-64 bg-slate-900 text-white flex-shrink-0">
+            <div class="p-6 text-2xl font-bold border-b border-slate-800">DptoLibre</div>
+            <nav class="mt-6">
+                <a href="#" class="block py-3 px-6 bg-blue-600 border-l-4 border-white">Dashboard</a>
+                <a href="#" class="block py-3 px-6 hover:bg-slate-800 transition">Propiedades</a>
+                <a href="#" class="block py-3 px-6 hover:bg-slate-800 transition">Propietarios</a>
+                <a href="#" class="block py-3 px-6 hover:bg-slate-800 transition">Finanzas</a>
             </nav>
         </aside>
 
-        <!-- Contenido -->
-        <main class="main-content flex-1 flex flex-col overflow-y-auto">
-            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-                <h2 class="text-lg font-semibold text-gray-700">Resumen</h2>
-                <div class="flex items-center gap-4">
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                        Nueva Gestión
-                    </button>
+        <!-- Main Content -->
+        <main class="flex-1">
+            <!-- Barra Superior -->
+            <header class="bg-white shadow-sm p-4 flex justify-between items-center border-b border-gray-200">
+                <h1 class="text-xl font-semibold">Centro de Comando</h1>
+                <div class="flex gap-4">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">Nueva Gestión</button>
                 </div>
             </header>
 
-            <div class="p-8">
-                <div id="app-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Aquí se inyectan las tarjetas dinámicamente -->
+            <!-- Grid de Indicadores -->
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Propiedades Totales</p>
+                        <h3 class="text-2xl font-bold">142</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Ocupación</p>
+                        <h3 class="text-2xl font-bold">88%</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Pagos Pendientes</p>
+                        <h3 class="text-2xl font-bold text-red-500">12</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Ingresos Mes</p>
+                        <h3 class="text-2xl font-bold text-green-600">$4.2M</h3>
+                    </div>
+                </div>
+
+                <!-- Tabla de Gestión -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between">
+                        <h2 class="font-bold text-lg">Últimas Gestiones</h2>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                            <tr>
+                                <th class="px-6 py-4">Propiedad</th>
+                                <th class="px-6 py-4">Propietario</th>
+                                <th class="px-6 py-4">Estado</th>
+                                <th class="px-6 py-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gestiones" class="divide-y divide-gray-100">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Simulación de carga de datos para evitar errores de renderizado
-        const data = [1, 2, 3, 4, 5, 6];
-        const container = document.getElementById('app-container');
-        
-        container.innerHTML = data.map(i => `
-            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div class="h-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center text-gray-400">
-                    Imagen ${i}
-                </div>
-                <h3 class="font-bold text-gray-800">Propiedad #${i}</h3>
-                <p class="text-sm text-gray-500">Ubicación y detalles básicos</p>
-            </div>
+        const gestiones = [
+            { prop: "Dpto 101 - Edificio Sol", pro: "Juan Pérez", estado: "Al día" },
+            { prop: "Dpto 204 - Torres B", pro: "María García", estado: "Pendiente" },
+            { prop: "Dpto 402 - Los Olivos", pro: "Carlos Ruiz", estado: "Al día" }
+        ];
+
+        const tbody = document.getElementById('tabla-gestiones');
+        tbody.innerHTML = gestiones.map(g => `
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 font-medium">${g.prop}</td>
+                <td class="px-6 py-4 text-gray-600">${g.pro}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs ${g.estado === 'Al día' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                        ${g.estado}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
         `).join('');
     </script>
 </body>
