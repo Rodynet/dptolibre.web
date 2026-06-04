@@ -3,100 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre | Gestión Proactiva</title>
+    <title>DptoLibre | Gestión de Propiedades</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-slate-50 text-slate-800">
 
     <div class="flex h-screen">
-        <!-- Sidebar Minimalista -->
+        <!-- Sidebar Lateral (Consistente con diseño previo) -->
         <aside class="w-20 bg-slate-950 text-slate-400 flex flex-col items-center py-8 gap-8">
             <div class="text-white text-2xl font-bold">D</div>
             <nav class="flex flex-col gap-6">
-                <a class="text-white bg-blue-600 p-3 rounded-xl"><i class="fas fa-home"></i></a>
+                <a class="hover:text-white transition"><i class="fas fa-home"></i></a>
+                <a class="text-white bg-blue-600 p-3 rounded-xl"><i class="fas fa-building"></i></a>
                 <a class="hover:text-white transition"><i class="fas fa-user"></i></a>
-                <a class="hover:text-white transition"><i class="fas fa-wallet"></i></a>
                 <a class="hover:text-white transition"><i class="fas fa-gear"></i></a>
             </nav>
         </aside>
 
-        <!-- Contenido Principal -->
-        <main class="flex-1 p-8 overflow-y-auto">
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-slate-950">Hola, Administrador</h1>
-                <p class="text-slate-500">Tienes 4 situaciones que requieren tu atención hoy.</p>
+        <!-- Contenido -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Header Superior (Consistente con el diseño del sistema) -->
+            <header class="bg-white border-b border-slate-200 p-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-950">Propiedades</h1>
+                    <p class="text-slate-500 text-sm">Gestiona tus unidades y niveles de ocupación.</p>
+                </div>
+                <button class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                    <i class="fas fa-plus text-sm"></i> Nueva Propiedad
+                </button>
             </header>
 
-            <!-- Alertas de Fricción Cero -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-red-50 p-5 rounded-2xl border border-red-100 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-red-700 font-semibold text-sm">Vencimiento Hoy</p>
-                        <h3 class="text-2xl font-bold text-red-950">3 Pagos</h3>
-                    </div>
-                    <i class="fas fa-exclamation-circle text-red-400 text-3xl"></i>
+            <div class="p-8">
+                <!-- Filtros Rápidos -->
+                <div class="flex gap-4 mb-8">
+                    <button class="px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg font-medium text-sm">Todas</button>
+                    <button class="px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-lg font-medium text-sm">Alquiladas</button>
+                    <button class="px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-lg font-medium text-sm">Disponibles</button>
                 </div>
-                <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-amber-700 font-semibold text-sm">Mantenimiento</p>
-                        <h3 class="text-2xl font-bold text-amber-950">2 Tickets</h3>
-                    </div>
-                    <i class="fas fa-tools text-amber-400 text-3xl"></i>
-                </div>
-                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-blue-700 font-semibold text-sm">Nuevas Solicitudes</p>
-                        <h3 class="text-2xl font-bold text-blue-950">5 Leads</h3>
-                    </div>
-                    <i class="fas fa-inbox text-blue-400 text-3xl"></i>
-                </div>
-            </div>
 
-            <!-- Tabla de Gestión Dinámica -->
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-6 flex items-center justify-between border-b border-slate-100">
-                    <h2 class="font-bold text-xl">Gestión Inmediata</h2>
-                    <input type="text" placeholder="Buscar propiedad o inquilino..." class="px-4 py-2 border rounded-xl w-64 text-sm focus:outline-blue-500">
+                <!-- Grid de Propiedades -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="grid-propiedades">
+                    <!-- Las tarjetas serán inyectadas por JS -->
                 </div>
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
-                        <tr>
-                            <th class="px-6 py-4">Propiedad</th>
-                            <th class="px-6 py-4">Inquilino</th>
-                            <th class="px-6 py-4">Estado</th>
-                            <th class="px-6 py-4 text-right">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-pro" class="text-sm">
-                        <!-- JS inyectará las filas -->
-                    </tbody>
-                </table>
             </div>
         </main>
     </div>
 
     <script>
-        const data = [
-            { id: "101", prop: "Dpto - Av. Siempre Viva", inquilino: "Juan Pérez", estado: "Atrasado", color: "red" },
-            { id: "204", prop: "Local - Centro", inquilino: "María Sol", estado: "Al Día", color: "green" },
-            { id: "305", prop: "Cochera - Edif. Norte", inquilino: "Carlos Ruiz", estado: "Pendiente", color: "amber" }
+        const propiedades = [
+            { nombre: "Dpto 2 Amb - Belgrano", estado: "Alquilado", renta: "$450.000", ocupado: true },
+            { nombre: "Cochera Fija - Microcentro", estado: "Disponible", renta: "$80.000", ocupado: false },
+            { nombre: "Oficina 3 - Edif. Plaza", estado: "En mantenimiento", renta: "$320.000", ocupado: false },
+            { nombre: "Dpto Monoambiente - Palermo", estado: "Alquilado", renta: "$380.000", ocupado: true }
         ];
 
-        const tbody = document.getElementById('tabla-pro');
-        tbody.innerHTML = data.map(d => `
-            <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                <td class="px-6 py-4 font-medium">${d.prop}</td>
-                <td class="px-6 py-4 text-slate-600">${d.inquilino}</td>
-                <td class="px-6 py-4">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-${d.color}-50 text-${d.color}-700 border border-${d.color}-200">
-                        ${d.estado}
+        const grid = document.getElementById('grid-propiedades');
+        grid.innerHTML = propiedades.map(p => `
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${p.estado === 'Alquilado' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}">
+                        ${p.estado}
                     </span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                    <button class="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg text-slate-700 transition font-medium">Gestionar</button>
-                </td>
-            </tr>
+                    <button class="text-slate-400 hover:text-slate-800"><i class="fas fa-ellipsis-v"></i></button>
+                </div>
+                <h3 class="font-bold text-lg mb-1">${p.nombre}</h3>
+                <p class="text-slate-500 text-sm mb-4">Renta mensual: <span class="font-bold text-slate-900">${p.renta}</span></p>
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-slate-900 text-white py-2 rounded-lg text-sm font-medium hover:bg-slate-800">Ver Detalles</button>
+                    <button class="px-3 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-pencil-alt"></i></button>
+                </div>
+            </div>
         `).join('');
     </script>
 </body>
