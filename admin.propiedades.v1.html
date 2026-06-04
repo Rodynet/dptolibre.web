@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre | Gestión Avanzada</title>
+    <title>DptoLibre | Gestión Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-<!-- Modal único para Nuevo (Propiedad, Usuario, Contrato) -->
+<!-- Modal para Crear -->
 <div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <h2 id="modal-title" class="text-xl font-bold mb-4">Nueva Entidad</h2>
+    <div class="bg-white rounded-2xl w-full max-w-md p-6">
+        <h2 class="text-xl font-bold mb-4">Nueva Entidad</h2>
         <form id="entity-form" class="flex flex-col gap-4">
-            <input type="text" id="entity-name" placeholder="Nombre" class="w-full p-3 border rounded-xl" required>
-            <select id="entity-type" class="w-full p-3 border rounded-xl">
+            <input type="text" id="ent-name" placeholder="Nombre" class="w-full p-3 border rounded-xl" required>
+            <input type="text" id="ent-desc" placeholder="Descripción breve" class="w-full p-3 border rounded-xl" required>
+            <select id="ent-type" class="w-full p-3 border rounded-xl">
                 <option value="Propiedad">Propiedad</option>
                 <option value="Usuario">Usuario</option>
                 <option value="Contrato">Contrato</option>
@@ -28,103 +29,89 @@
     </div>
 </div>
 
-<div class="flex h-screen">
-    <!-- Sidebar -->
-    <aside class="w-20 bg-slate-950 text-slate-400 flex flex-col items-center py-8 gap-8">
-        <div class="text-blue-500 text-2xl font-bold">D</div>
-        <nav class="flex flex-col gap-6">
-            <a class="hover:text-white"><i class="fas fa-home"></i></a>
-            <a class="text-white bg-blue-600 p-3 rounded-xl shadow-lg"><i class="fas fa-building"></i></a>
-        </nav>
-    </aside>
-
-    <main class="flex-1 overflow-y-auto">
-        <header class="p-8 border-b bg-white flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-950">Gestión de Activos</h1>
-            </div>
-            <div class="flex gap-3">
-                <input type="text" id="search-input" onkeyup="filterData()" placeholder="Filtrar propiedades..." class="px-4 py-2 border rounded-xl w-64 focus:ring-2 focus:ring-blue-500 outline-none">
-                <button onclick="toggleModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700">
-                    <i class="fas fa-plus mr-2"></i> Nuevo
-                </button>
-            </div>
-        </header>
-
-        <div class="px-8 py-4 flex gap-2">
-            <button onclick="changeView('grid')" class="p-2 bg-white border rounded-lg hover:bg-slate-50"><i class="fas fa-th-large"></i></button>
-            <button onclick="changeView('list')" class="p-2 bg-white border rounded-lg hover:bg-slate-50"><i class="fas fa-list"></i></button>
-        </div>
-
-        <div id="content-area" class="px-8 pb-8"></div>
-    </main>
+<!-- Panel de Detalles / Edición -->
+<div id="detail-panel" class="hidden fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-40 p-6 border-l">
+    <button onclick="closeDetail()" class="text-slate-400 hover:text-slate-900"><i class="fas fa-times"></i> Cerrar</button>
+    <div id="detail-content" class="mt-6"></div>
 </div>
 
+<main class="max-w-6xl mx-auto p-8">
+    <header class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">Panel de Control</h1>
+        <div class="flex gap-3">
+            <input type="text" id="search-input" onkeyup="render()" placeholder="Buscar por nombre o descripción..." class="px-4 py-2 border rounded-xl w-72">
+            <button onclick="toggleModal()" class="bg-blue-600 text-white px-5 py-2 rounded-xl"><i class="fas fa-plus mr-2"></i> Nuevo</button>
+        </div>
+    </header>
+
+    <div id="content-area" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+</main>
+
 <script>
-    // Estado inicial en memoria
     let data = [
-        { id: 1, name: "Dpto Palermo - 2 Amb", type: "Propiedad", status: "Alquilado", location: "Córdoba, ARG" },
-        { id: 2, name: "Casa Centro - 3 Amb", type: "Propiedad", status: "Libre", location: "Córdoba, ARG" }
+        { id: 1, name: "Dpto Palermo", desc: "Departamento 2 amb con vista al parque", type: "Propiedad", status: "Disponible" },
+        { id: 2, name: "Juan Pérez", desc: "Inquilino principal contrato anual", type: "Usuario", status: "Activo" }
     ];
 
-    let currentView = 'grid';
-
     function render() {
-        const area = document.getElementById('content-area');
-        area.innerHTML = currentView === 'grid' ? renderGrid() : renderList();
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const filtered = data.filter(i => 
+            i.name.toLowerCase().includes(query) || i.desc.toLowerCase().includes(query)
+        );
+        
+        document.getElementById('content-area').innerHTML = filtered.map(item => `
+            <div class="bg-white p-6 rounded-2xl border shadow-sm">
+                <h3 class="font-bold text-lg">${item.name}</h3>
+                <p class="text-sm text-slate-500 mb-4 truncate">${item.desc}</p>
+                <span class="px-2 py-1 bg-slate-100 rounded text-xs font-bold">${item.type}</span>
+                <button onclick="verDetalle(${item.id})" class="mt-4 w-full border border-slate-200 py-2 rounded-lg hover:bg-slate-50">Ver Detalle</button>
+            </div>
+        `).join('');
     }
 
-    function renderGrid() {
-        return `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            ${data.map(item => `
-                <div class="bg-white p-6 rounded-2xl border shadow-sm hover:shadow-md transition">
-                    <h3 class="font-bold text-lg">${item.name}</h3>
-                    <p class="text-sm text-slate-500 mb-4">${item.type} • ${item.status}</p>
-                    <div class="h-32 bg-slate-100 rounded-lg mb-4 flex flex-col items-center justify-center border-dashed border-2 text-slate-400">
-                        <i class="fas fa-map-pin text-blue-500 mb-2"></i>
-                        ${item.location}
-                    </div>
-                    <button class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm">Detalles</button>
-                </div>
-            `).join('')}
-        </div>`;
+    function verDetalle(id) {
+        const item = data.find(i => i.id === id);
+        const panel = document.getElementById('detail-content');
+        panel.innerHTML = `
+            <h2 class="text-2xl font-bold mb-2">${item.name}</h2>
+            <p class="text-slate-600 mb-4">${item.desc}</p>
+            <div class="space-y-4">
+                <input type="text" value="${item.name}" id="edit-name" class="w-full p-2 border rounded">
+                <textarea id="edit-desc" class="w-full p-2 border rounded">${item.desc}</textarea>
+                <button onclick="guardarEdicion(${id})" class="w-full bg-blue-600 text-white py-2 rounded-xl">Guardar Cambios</button>
+                <button onclick="eliminar(${id})" class="w-full text-red-500 py-2">Eliminar</button>
+            </div>
+        `;
+        document.getElementById('detail-panel').classList.remove('hidden');
     }
 
-    function renderList() {
-        return `<div class="bg-white rounded-2xl border p-4">
-            <table class="w-full text-left">
-                <thead class="text-slate-400 text-sm border-b"><tr><th class="pb-3">Nombre</th><th class="pb-3">Tipo</th><th class="pb-3">Estado</th></tr></thead>
-                <tbody>
-                    ${data.map(item => `<tr><td class="py-4 font-medium">${item.name}</td><td>${item.type}</td><td class="text-emerald-600">${item.status}</td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>`;
-    }
-
-    function changeView(view) {
-        currentView = view;
+    function guardarEdicion(id) {
+        const index = data.findIndex(i => i.id === id);
+        data[index].name = document.getElementById('edit-name').value;
+        data[index].desc = document.getElementById('edit-desc').value;
         render();
+        closeDetail();
     }
 
-    function toggleModal() {
-        const modal = document.getElementById('modal');
-        modal.classList.toggle('hidden');
+    function eliminar(id) {
+        data = data.filter(i => i.id !== id);
+        render();
+        closeDetail();
     }
 
-    function filterData() {
-        const val = document.getElementById('search-input').value.toLowerCase();
-        // Lógica de filtrado simple sobre el array 'data'
-        render(); 
-    }
+    function closeDetail() { document.getElementById('detail-panel').classList.add('hidden'); }
+    function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
 
-    // Manejo del formulario
     document.getElementById('entity-form').onsubmit = (e) => {
         e.preventDefault();
-        const name = document.getElementById('entity-name').value;
-        const type = document.getElementById('entity-type').value;
-        data.push({ id: Date.now(), name, type, status: 'Nuevo', location: 'Pendiente' });
-        toggleModal();
+        data.push({ 
+            id: Date.now(), 
+            name: document.getElementById('ent-name').value, 
+            desc: document.getElementById('ent-desc').value,
+            type: document.getElementById('ent-type').value 
+        });
         render();
+        toggleModal();
     };
 
     render();
