@@ -3,64 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre Admin - Directorio de Propiedades</title>
+    <title>Gestión de Propiedades - DptoLibre</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .hidden-panel { display: none; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex">
 
-    <script type="text/babel">
-        const { useState } = React;
+    <!-- Sidebar Fijo -->
+    <aside class="w-64 bg-white border-r border-slate-200 p-6 flex-shrink-0">
+        <h1 class="text-2xl font-black text-blue-600 mb-10">DptoLibre</h1>
+        <nav class="space-y-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gestión</div>
+            <button class="flex items-center gap-3 w-full p-3 bg-blue-50 text-blue-700 rounded-xl font-semibold">
+                Propiedades
+            </button>
+        </nav>
+    </aside>
 
-        const initialProperties = [
-            { id: 1, address: "Belgrano 880, 2A", type: "Departamento", status: "Alquilada", tenant: "Ana Silva", roi: "4.2%", lastMaintenance: "12/2025" },
-            { id: 2, address: "Caseros 1230, 4B", type: "Departamento", status: "Alquilada", tenant: "Marcos Galperin", roi: "4.5%", lastMaintenance: "03/2026" },
-            { id: 3, address: "Av. Colón 450", type: "Oficina", status: "Vacante", tenant: "-", roi: "0%", lastMaintenance: "01/2026" },
-            { id: 4, address: "San Martín 22", type: "Local Comercial", status: "En Mantenimiento", tenant: "Damián Martínez", roi: "3.8%", lastMaintenance: "05/2026" }
-        ];
+    <!-- Contenido Principal -->
+    <main class="flex-1 overflow-y-auto">
+        <header class="sticky top-0 bg-slate-50/80 backdrop-blur-md p-8 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-2xl font-black">Panel de Propiedades</h2>
+            <div class="flex gap-2">
+                <button onclick="changeView('grid')" class="p-2 rounded-lg bg-white border border-slate-200">Cuadrícula</button>
+                <button onclick="changeView('list')" class="p-2 rounded-lg bg-white border border-slate-200">Lista</button>
+            </div>
+        </header>
 
-        function PropertyAdmin() {
-            const [selectedProp, setSelectedProp] = useState(null);
-
-            return (
-                <div className="flex h-screen bg-slate-50 p-10">
-                    <div className="flex-1 bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="p-6 text-[10px] font-black uppercase text-slate-400">Dirección</th>
-                                    <th className="p-6 text-[10px] font-black uppercase text-slate-400">Estado</th>
-                                    <th className="p-6 text-[10px] font-black uppercase text-slate-400">Inquilino Actual</th>
-                                    <th className="p-6 text-[10px] font-black uppercase text-slate-400">ROI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {initialProperties.map(prop => (
-                                    <tr key={prop.id} onClick={() => setSelectedProp(prop)} className="hover:bg-slate-50 cursor-pointer border-t">
-                                        <td className="p-6 font-bold">{prop.address}</td>
-                                        <td className="p-6"><span className="px-2 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-700">{prop.status}</span></td>
-                                        <td className="p-6">{prop.tenant}</td>
-                                        <td className="p-6 font-mono font-bold text-[#0055DD]">{prop.roi}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+        <div id="container" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Card de ejemplo -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-lg font-bold mb-2">Belgrano 880, 2A</h3>
+                <div class="space-y-1 text-sm text-slate-600 mb-4">
+                    <p><strong>Dueño:</strong> <a href="#" class="text-blue-600 underline">Ana Silva</a></p>
+                    <p><strong>Inquilino:</strong> <a href="#" class="text-blue-600 underline">Juan Pérez</a></p>
+                    <p><strong>Contrato:</strong> <a href="#" class="text-blue-600 font-medium">CN-2026-001</a></p>
                 </div>
-            );
+                <button onclick="toggleDetail()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Ver Detalle</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Panel Lateral Detalle (Oculto por defecto) -->
+    <div id="detailPanel" class="hidden-panel w-96 bg-white border-l border-slate-200 p-8 shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black">Detalle Completo</h2>
+            <button onclick="toggleDetail()" class="text-slate-400">Cerrar</button>
+        </div>
+        <div class="space-y-4">
+            <p><strong>Ubicación:</strong> -31.416, -64.183</p>
+            <p><strong>Estado:</strong> Alquilada</p>
+            <button class="w-full p-3 bg-blue-600 text-white rounded-xl font-bold">Editar Propiedad</button>
+            <button class="w-full p-3 border border-slate-200 rounded-xl font-bold">Ver Fotos</button>
+        </div>
+    </div>
+
+    <script>
+        function changeView(view) {
+            const container = document.getElementById('container');
+            container.className = view === 'grid' 
+                ? 'p-8 grid grid-cols-1 md:grid-cols-2 gap-6' 
+                : 'p-8 space-y-4';
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<PropertyAdmin />);
+        function toggleDetail() {
+            const panel = document.getElementById('detailPanel');
+            panel.classList.toggle('hidden-panel');
+        }
     </script>
 </body>
 </html>
