@@ -25,6 +25,7 @@
         function App() {
             const [data, setData] = useState(initialData);
             const [selectedId, setSelectedId] = useState(null);
+            const [viewMode, setViewMode] = useState('grid');
             const [searchTerm, setSearchTerm] = useState('');
             const [filterStatus, setFilterStatus] = useState('Todos');
             const [isEditingOwner, setIsEditingOwner] = useState(false);
@@ -58,23 +59,28 @@
                                         </select>
                                     </div>
                                     <div className="flex items-center gap-6">
-                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">Nuevo +</button>
                                         <div className="flex border rounded-lg overflow-hidden">
-                                            <button className="p-2 bg-white hover:bg-slate-100">▦</button>
-                                            <button className="p-2 bg-slate-200">≡</button>
+                                            <button onClick={() => setViewMode('grid')} className={`p-2 ${viewMode === 'grid' ? 'bg-slate-200' : 'bg-white'}`}>▦</button>
+                                            <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-slate-200' : 'bg-white'}`}>≡</button>
                                         </div>
+                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">Nuevo +</button>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className={viewMode === 'grid' ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : "space-y-4"}>
                                     {filteredData.map(p => (
                                         <div key={p.id} onClick={() => setSelectedId(p.id)} className="bg-white p-4 rounded-2xl border shadow-sm hover:shadow-lg transition cursor-pointer flex gap-4">
                                             <img src={p.img} className="w-24 h-24 rounded-lg object-cover" alt="Propiedad" />
                                             <div className="flex-1">
                                                 <h3 className="font-bold">{p.address}</h3>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 items-center mb-2">
                                                     <span className={`text-[10px] px-2 py-0.5 rounded-full border ${p.status === 'Alquilada' ? 'bg-emerald-100 text-emerald-800' : p.status === 'Reservado' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>{p.status}</span>
                                                     <span className="text-xs font-bold text-slate-600">{p.value}</span>
                                                 </div>
+                                                {p.status !== 'Disponible' && (
+                                                    <div className="w-full bg-slate-100 rounded-full h-2 mt-2">
+                                                        <div className="bg-emerald-500 h-2 rounded-full" style={{width: `${p.progress}%`}}></div>
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-slate-500 mt-2">Desde: {p.desde} {p.hasta ? `| Hasta: ${p.hasta}` : ''}</p>
                                             </div>
                                         </div>
