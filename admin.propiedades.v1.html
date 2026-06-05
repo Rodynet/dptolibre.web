@@ -21,44 +21,75 @@
             { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Disponible", start: "-", end: "-", progress: 0, photo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" }
         ];
 
+        const getStatusColor = (status) => {
+            switch(status) {
+                case 'Alquilada': return 'bg-emerald-100 text-emerald-800';
+                case 'Reservado': return 'bg-amber-100 text-amber-800';
+                default: return 'bg-blue-100 text-blue-800';
+            }
+        };
+
         function App() {
             const [view, setView] = useState('grid');
             const [search, setSearch] = useState('');
 
+            const filteredData = data.filter(i => 
+                i.address.toLowerCase().includes(search.toLowerCase()) || 
+                i.owner.toLowerCase().includes(search.toLowerCase()) ||
+                i.tenant.toLowerCase().includes(search.toLowerCase())
+            );
+
             return (
                 <div className="flex h-screen">
                     <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col">
-                        <h1 className="text-xl font-black text-emerald-400 mb-10">DPTOLIBRE</h1>
+                        <h1 className="text-xl font-black text-emerald-400 mb-10 tracking-widest">DPTOLIBRE</h1>
                         <nav className="space-y-4">
-                            {['Usuarios', 'Contratos', 'Propiedades'].map(i => <div key={i} className={`p-2 cursor-pointer ${i === 'Propiedades' ? 'font-bold text-emerald-400' : 'text-slate-400'}`}>{i}</div>)}
+                            {['Usuarios', 'Contratos', 'Propiedades'].map(i => (
+                                <div key={i} className={`p-2 cursor-pointer transition ${i === 'Propiedades' ? 'font-bold text-emerald-400 border-l-4 border-emerald-400' : 'text-slate-400 hover:text-white'}`}>{i}</div>
+                            ))}
                         </nav>
                     </aside>
 
                     <main className="flex-1 p-8 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="p-2 border rounded-lg w-1/3" />
+                        <div className="flex justify-between items-center mb-8">
+                            <input 
+                                onChange={(e) => setSearch(e.target.value)} 
+                                placeholder="Buscar propiedad, dueño o inquilino..." 
+                                className="p-3 border rounded-xl w-1/2 shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none" 
+                            />
                             <div className="flex gap-2">
-                                <button onClick={() => setView('grid')} className="px-4 py-2 bg-slate-200 rounded">Cuadrícula</button>
-                                <button onClick={() => setView('list')} className="px-4 py-2 bg-slate-200 rounded">Lista</button>
-                                <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold">+ Nuevo</button>
+                                <button onClick={() => setView('grid')} className={`px-4 py-2 rounded-lg ${view === 'grid' ? 'bg-slate-800 text-white' : 'bg-white border'}`}>Cuadrícula</button>
+                                <button onClick={() => setView('list')} className={`px-4 py-2 rounded-lg ${view === 'list' ? 'bg-slate-800 text-white' : 'bg-white border'}`}>Lista</button>
+                                <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700">+ Nuevo</button>
                             </div>
                         </div>
 
-                        <div className={view === 'grid' ? "grid grid-cols-3 gap-6" : "space-y-4"}>
-                            {data.filter(i => i.address.toLowerCase().includes(search.toLowerCase())).map(p => (
-                                <div key={p.id} className="bg-white p-4 rounded-xl border flex gap-4">
-                                    <img src={p.photo} className="w-24 h-24 object-cover rounded-lg" />
-                                    <div className="flex-1">
-                                        <h3 className="font-bold">{p.address}</h3>
-                                        <p className="text-xs">Dueño: <span className="text-blue-600 cursor-pointer">{p.owner}</span></p>
-                                        <p className="text-xs">Inquilino: <span className="text-blue-600 cursor-pointer">{p.tenant}</span></p>
-                                        <div className="mt-2 text-[10px] flex gap-2">
-                                            <span>Desde: {p.start}</span>
-                                            {p.end !== '-' && <span>Hasta: {p.end}</span>}
+                        <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+                            {filteredData.map(p => (
+                                <div key={p.id} className="bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition flex gap-4">
+                                    <img src={p.photo} alt="Propiedad" className="w-24 h-24 object-cover rounded-xl" />
+                                    <div className="flex-1 space-y-1">
+                                        <div className="flex justify-between items-start">
+                                            <h3 className="font-bold text-lg">{p.address}</h3>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${getStatusColor(p.status)}`}>{p.status}</span>
                                         </div>
+                                        <p className="text-sm text-slate-600">Dueño: <a href="#" className="text-blue-600 hover:underline">{p.owner}</a></p>
+                                        <p className="text-sm text-slate-600">Inquilino: <a href="#" className="text-blue-600 hover:underline">{p.tenant}</a></p>
+                                        
+                                        <div className="mt-3 text-xs flex gap-4 text-slate-500">
+                                            {p.start !== '-' && <span>Desde: <b>{p.start}</b></span>}
+                                            {p.end !== '-' && <span>Hasta: <b>{p.end}</b></span>}
+                                        </div>
+
                                         {p.status === 'Alquilada' && (
-                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-2">
-                                                <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${p.progress}%` }}></div>
+                                            <div className="mt-3">
+                                                <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                                                    <span>Progreso de contrato</span>
+                                                    <span>{p.progress}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 h-2 rounded-full">
+                                                    <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${p.progress}%` }}></div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
