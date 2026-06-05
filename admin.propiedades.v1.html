@@ -9,10 +9,8 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f7f6; }
     </style>
 </head>
 <body>
@@ -22,57 +20,63 @@
         const { useState, useMemo } = React;
 
         const data = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", features: ["2 Dorm", "Baño", "Balcón"], contractStart: "2025-01-01", contractEnd: "2026-12-31", location: "Córdoba, Centro", lat: -31.4201, lng: -64.1888 },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Alquilada", features: ["3 Dorm", "Cochera", "Pileta"], contractStart: "2026-01-01", contractEnd: "2027-12-31", location: "Córdoba, B° Alberdi", lat: -31.4150, lng: -64.1950 },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Vacante", features: ["Monoambiente"], lastMaint: "2026-03-15", location: "Córdoba, Centro", lat: -31.4160, lng: -64.1850 }
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", contractStart: "2025-01-01", contractEnd: "2026-12-31", lat: -31.4201, lng: -64.1888, photo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400" },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Reservado", contractStart: "2026-06-01", contractEnd: "2027-06-01", lat: -31.4150, lng: -64.1950, photo: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400" },
+            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Disponible", contractStart: null, contractEnd: null, lat: -31.4160, lng: -64.1850, photo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" },
+            { id: 4, address: "Obispo Trejo 150", owner: "Juan Diaz", tenant: "-", status: "No disponible", contractStart: null, contractEnd: null, lat: -31.4180, lng: -64.1820, photo: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400" }
         ];
 
+        const NavItem = ({ label, active }) => (
+            <div className={`py-3 px-4 rounded-lg font-bold cursor-pointer transition ${active ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                {label}
+            </div>
+        );
+
         function App() {
-            const [search, setSearch] = useState('');
+            const [filter, setFilter] = useState('Todos');
             const [selected, setSelected] = useState(null);
 
-            const filtered = useMemo(() => data.filter(p => 
-                p.address.toLowerCase().includes(search.toLowerCase()) || 
-                p.tenant.toLowerCase().includes(search.toLowerCase())
-            ), [search]);
+            const filteredData = useMemo(() => {
+                return filter === 'Todos' ? data : data.filter(p => p.status === filter);
+            }, [filter]);
 
-            const calculateProgress = (p) => {
-                if (p.status === 'Alquilada') {
-                    const start = new Date(p.contractStart);
-                    const end = new Date(p.contractEnd);
-                    const total = end - start;
-                    const current = new Date() - start;
-                    return Math.min(Math.max((current / total) * 100, 0), 100);
-                }
-                const diff = Math.floor((new Date() - new Date(p.lastMaint || p.contractStart)) / (1000 * 60 * 60 * 24));
-                return diff;
+            const getStatusColor = (status) => {
+                const colors = { 'Alquilada': 'bg-blue-500', 'Reservado': 'bg-amber-500', 'Disponible': 'bg-emerald-500', 'No disponible': 'bg-red-500' };
+                return colors[status] || 'bg-slate-400';
             };
 
             return (
                 <div className="flex h-screen">
-                    <aside className="w-64 bg-slate-900 p-6 text-white flex flex-col justify-between">
-                        <div><h1 className="font-black text-xl mb-10 text-emerald-400">DptoLibre</h1></div>
-                        <button className="bg-emerald-600 w-full py-3 rounded-xl font-bold">+ Nuevo Registro</button>
+                    <aside className="w-64 bg-slate-900 p-6 flex flex-col justify-between">
+                        <div>
+                            <h1 className="text-2xl font-black text-emerald-400 mb-10 tracking-tighter">DPTOLIBRE</h1>
+                            <div className="space-y-2">
+                                <NavItem label="Usuarios" />
+                                <NavItem label="Contratos" />
+                                <NavItem label="Propiedades" active />
+                            </div>
+                        </div>
                     </aside>
 
                     <main className="flex-1 p-8 overflow-y-auto">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-2xl font-black">Panel de Gestión</h2>
-                            <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por dirección o inquilino..." className="px-4 py-2 rounded-lg border w-80 shadow-sm" />
+                            <h2 className="text-3xl font-black">Propiedades</h2>
+                            <div className="flex gap-2">
+                                {['Todos', 'Alquilada', 'Reservado', 'Disponible', 'No disponible'].map(s => (
+                                    <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === s ? 'bg-slate-800 text-white' : 'bg-white border'}`}>{s}</button>
+                                ))}
+                                <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">+ Nueva Propiedad</button>
+                            </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl border shadow-sm">
-                            {filtered.map(p => (
-                                <div key={p.id} className="grid grid-cols-6 items-center p-6 border-b hover:bg-slate-50">
-                                    <div className="col-span-2 font-bold">{p.address}<p className="text-[10px] text-slate-400">{p.location}</p></div>
-                                    <div className="text-sm">{p.tenant}</div>
-                                    <div className="flex gap-1">
-                                        {p.features.map(f => <span key={f} className="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded">{f}</span>)}
-                                    </div>
-                                    <div className="text-[10px] font-bold text-slate-500">
-                                        {p.status === 'Alquilada' ? `Progreso: ${Math.round(calculateProgress(p))}%` : `Antigüedad: ${calculateProgress(p)} días`}
-                                    </div>
-                                    <button onClick={() => setSelected(p)} className="text-emerald-600 font-bold text-sm text-right">Ver Detalles</button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredData.map(p => (
+                                <div key={p.id} className="bg-white rounded-2xl shadow-sm border p-4">
+                                    <img src={p.photo} className="w-full h-40 object-cover rounded-xl mb-4" alt="Propiedad" />
+                                    <div className={`inline-block px-2 py-1 rounded text-[10px] text-white font-bold mb-2 ${getStatusColor(p.status)}`}>{p.status}</div>
+                                    <h3 className="font-bold text-lg">{p.address}</h3>
+                                    <p className="text-sm text-slate-500 mb-4">{p.tenant}</p>
+                                    <button onClick={() => setSelected(p)} className="w-full bg-slate-100 py-2 rounded-lg font-bold text-sm">Ver Detalles</button>
                                 </div>
                             ))}
                         </div>
@@ -80,18 +84,17 @@
 
                     {selected && (
                         <div className="fixed inset-0 bg-black/50 flex justify-end z-50">
-                            <div className="w-[600px] bg-white h-full p-8 shadow-xl overflow-y-auto slide-in-right">
-                                <div className="flex justify-between items-start mb-6">
-                                    <h2 className="text-2xl font-black">{selected.address}</h2>
-                                    <button onClick={() => setSelected(null)} className="font-bold">✕</button>
+                            <div className="w-[500px] bg-white h-full p-8 overflow-y-auto">
+                                <div className="flex justify-between mb-6">
+                                    <h2 className="text-2xl font-black">Detalle</h2>
+                                    <button onClick={() => setSelected(null)} className="font-bold">Cerrar</button>
                                 </div>
-                                <div className="h-48 bg-slate-200 rounded-xl mb-6 flex items-center justify-center font-bold text-slate-400">
-                                    [Mapa Interactivo en {selected.lat}, {selected.lng}]
-                                </div>
-                                <div className="space-y-4">
+                                <img src={selected.photo} className="w-full h-64 object-cover rounded-2xl mb-6" />
+                                <div className="space-y-4 font-medium text-slate-700">
+                                    <p><strong>Estado:</strong> {selected.status}</p>
+                                    <p><strong>Ubicación:</strong> Lat: {selected.lat}, Lng: {selected.lng}</p>
                                     <p><strong>Inquilino:</strong> {selected.tenant}</p>
-                                    <p><strong>Contrato:</strong> {selected.contractStart || 'N/A'} - {selected.contractEnd || 'N/A'}</p>
-                                    <div className="border-t pt-4"><strong>Características:</strong> {selected.features.join(', ')}</div>
+                                    {selected.contractStart && <p><strong>Contrato:</strong> {selected.contractStart} al {selected.contractEnd}</p>}
                                 </div>
                             </div>
                         </div>
