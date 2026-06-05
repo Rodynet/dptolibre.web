@@ -27,6 +27,7 @@
             const [selectedId, setSelectedId] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [filterStatus, setFilterStatus] = useState('Todos');
+            const [isEditingOwner, setIsEditingOwner] = useState(false);
 
             const filteredData = useMemo(() => {
                 return data.filter(p => 
@@ -49,14 +50,20 @@
                     <main className="flex-1 p-8 overflow-y-auto">
                         {!selectedId ? (
                             <>
-                                <div className="flex justify-between mb-8">
+                                <div className="flex justify-between items-center mb-8">
                                     <div className="flex gap-4">
                                         <input placeholder="Buscar por dirección..." className="p-2 border rounded-xl w-64" onChange={(e) => setSearchTerm(e.target.value)} />
                                         <select className="p-2 border rounded-xl" onChange={(e) => setFilterStatus(e.target.value)}>
                                             <option>Todos</option><option>Alquilada</option><option>Reservado</option><option>Disponible</option>
                                         </select>
                                     </div>
-                                    <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl">+ Nueva Propiedad</button>
+                                    <div className="flex items-center gap-6">
+                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">Nuevo +</button>
+                                        <div className="flex border rounded-lg overflow-hidden">
+                                            <button className="p-2 bg-white hover:bg-slate-100">▦</button>
+                                            <button className="p-2 bg-slate-200">≡</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {filteredData.map(p => (
@@ -69,9 +76,6 @@
                                                     <span className="text-xs font-bold text-slate-600">{p.value}</span>
                                                 </div>
                                                 <p className="text-xs text-slate-500 mt-2">Desde: {p.desde} {p.hasta ? `| Hasta: ${p.hasta}` : ''}</p>
-                                                {p.status === 'Alquilada' && (
-                                                    <div className="w-full bg-slate-200 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-emerald-500 h-full" style={{width: p.progress + '%'}}></div></div>
-                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -90,16 +94,22 @@
                                         <h2 className="text-xl font-bold">{selected.address}</h2>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-sm">Valor Actual</label>
+                                                <label className="text-sm text-slate-500">Valor Actual</label>
                                                 <input className="w-full p-2 border rounded-lg" defaultValue={selected.value} />
                                             </div>
                                             <div>
-                                                <label className="text-sm">N° Contrato</label>
+                                                <label className="text-sm text-slate-500">N° Contrato</label>
                                                 <input className="w-full p-2 border rounded-lg" defaultValue={selected.contractNum} />
                                             </div>
                                         </div>
-                                        <label className="text-sm">Dueño</label>
-                                        <input className="w-full p-2 border rounded-lg" placeholder="Buscar propietario..." />
+                                        <div>
+                                            <label className="text-sm text-slate-500 block">Dueño</label>
+                                            {isEditingOwner ? (
+                                                <input className="w-full p-2 border rounded-lg" defaultValue={selected.owner} onBlur={() => setIsEditingOwner(false)} autoFocus />
+                                            ) : (
+                                                <div onClick={() => setIsEditingOwner(true)} className="p-2 border rounded-lg bg-slate-50 cursor-pointer">{selected.owner}</div>
+                                            )}
+                                        </div>
                                         <div className="p-4 bg-slate-100 rounded-xl">
                                             <p className="text-xs font-bold text-slate-500">Inquilino (No editable)</p>
                                             <p>{selected.tenant}</p>
