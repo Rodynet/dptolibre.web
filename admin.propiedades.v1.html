@@ -8,97 +8,64 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f7f6; }
-    </style>
 </head>
-<body>
+<body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState } = React;
 
         const data = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", contractStart: "2025-01-01", contractEnd: "2026-12-31", lat: -31.4201, lng: -64.1888, photo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400" },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Reservado", contractStart: "2026-06-01", contractEnd: "2027-06-01", lat: -31.4150, lng: -64.1950, photo: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400" },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Disponible", contractStart: null, contractEnd: null, lat: -31.4160, lng: -64.1850, photo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" },
-            { id: 4, address: "Obispo Trejo 150", owner: "Juan Diaz", tenant: "-", status: "No disponible", contractStart: null, contractEnd: null, lat: -31.4180, lng: -64.1820, photo: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400" }
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", start: "2025-01-01", end: "2026-12-31", progress: 75, photo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400" },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Reservado", start: "2026-06-01", end: "2027-06-01", progress: 0, photo: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400" },
+            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Disponible", start: "-", end: "-", progress: 0, photo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" }
         ];
 
-        const NavItem = ({ label, active }) => (
-            <div className={`py-3 px-4 rounded-lg font-bold cursor-pointer transition ${active ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-                {label}
-            </div>
-        );
-
         function App() {
-            const [filter, setFilter] = useState('Todos');
-            const [selected, setSelected] = useState(null);
-
-            const filteredData = useMemo(() => {
-                return filter === 'Todos' ? data : data.filter(p => p.status === filter);
-            }, [filter]);
-
-            const getStatusColor = (status) => {
-                const colors = { 'Alquilada': 'bg-blue-500', 'Reservado': 'bg-amber-500', 'Disponible': 'bg-emerald-500', 'No disponible': 'bg-red-500' };
-                return colors[status] || 'bg-slate-400';
-            };
+            const [view, setView] = useState('grid');
+            const [search, setSearch] = useState('');
 
             return (
                 <div className="flex h-screen">
-                    <aside className="w-64 bg-slate-900 p-6 flex flex-col justify-between">
-                        <div>
-                            <h1 className="text-2xl font-black text-emerald-400 mb-10 tracking-tighter">DPTOLIBRE</h1>
-                            <div className="space-y-2">
-                                <NavItem label="Usuarios" />
-                                <NavItem label="Contratos" />
-                                <NavItem label="Propiedades" active />
-                            </div>
-                        </div>
+                    <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col">
+                        <h1 className="text-xl font-black text-emerald-400 mb-10">DPTOLIBRE</h1>
+                        <nav className="space-y-4">
+                            {['Usuarios', 'Contratos', 'Propiedades'].map(i => <div key={i} className={`p-2 cursor-pointer ${i === 'Propiedades' ? 'font-bold text-emerald-400' : 'text-slate-400'}`}>{i}</div>)}
+                        </nav>
                     </aside>
 
                     <main className="flex-1 p-8 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-3xl font-black">Propiedades</h2>
+                        <div className="flex justify-between items-center mb-6">
+                            <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="p-2 border rounded-lg w-1/3" />
                             <div className="flex gap-2">
-                                {['Todos', 'Alquilada', 'Reservado', 'Disponible', 'No disponible'].map(s => (
-                                    <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === s ? 'bg-slate-800 text-white' : 'bg-white border'}`}>{s}</button>
-                                ))}
-                                <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">+ Nueva Propiedad</button>
+                                <button onClick={() => setView('grid')} className="px-4 py-2 bg-slate-200 rounded">Cuadrícula</button>
+                                <button onClick={() => setView('list')} className="px-4 py-2 bg-slate-200 rounded">Lista</button>
+                                <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold">+ Nuevo</button>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredData.map(p => (
-                                <div key={p.id} className="bg-white rounded-2xl shadow-sm border p-4">
-                                    <img src={p.photo} className="w-full h-40 object-cover rounded-xl mb-4" alt="Propiedad" />
-                                    <div className={`inline-block px-2 py-1 rounded text-[10px] text-white font-bold mb-2 ${getStatusColor(p.status)}`}>{p.status}</div>
-                                    <h3 className="font-bold text-lg">{p.address}</h3>
-                                    <p className="text-sm text-slate-500 mb-4">{p.tenant}</p>
-                                    <button onClick={() => setSelected(p)} className="w-full bg-slate-100 py-2 rounded-lg font-bold text-sm">Ver Detalles</button>
+                        <div className={view === 'grid' ? "grid grid-cols-3 gap-6" : "space-y-4"}>
+                            {data.filter(i => i.address.toLowerCase().includes(search.toLowerCase())).map(p => (
+                                <div key={p.id} className="bg-white p-4 rounded-xl border flex gap-4">
+                                    <img src={p.photo} className="w-24 h-24 object-cover rounded-lg" />
+                                    <div className="flex-1">
+                                        <h3 className="font-bold">{p.address}</h3>
+                                        <p className="text-xs">Dueño: <span className="text-blue-600 cursor-pointer">{p.owner}</span></p>
+                                        <p className="text-xs">Inquilino: <span className="text-blue-600 cursor-pointer">{p.tenant}</span></p>
+                                        <div className="mt-2 text-[10px] flex gap-2">
+                                            <span>Desde: {p.start}</span>
+                                            {p.end !== '-' && <span>Hasta: {p.end}</span>}
+                                        </div>
+                                        {p.status === 'Alquilada' && (
+                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-2">
+                                                <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${p.progress}%` }}></div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </main>
-
-                    {selected && (
-                        <div className="fixed inset-0 bg-black/50 flex justify-end z-50">
-                            <div className="w-[500px] bg-white h-full p-8 overflow-y-auto">
-                                <div className="flex justify-between mb-6">
-                                    <h2 className="text-2xl font-black">Detalle</h2>
-                                    <button onClick={() => setSelected(null)} className="font-bold">Cerrar</button>
-                                </div>
-                                <img src={selected.photo} className="w-full h-64 object-cover rounded-2xl mb-6" />
-                                <div className="space-y-4 font-medium text-slate-700">
-                                    <p><strong>Estado:</strong> {selected.status}</p>
-                                    <p><strong>Ubicación:</strong> Lat: {selected.lat}, Lng: {selected.lng}</p>
-                                    <p><strong>Inquilino:</strong> {selected.tenant}</p>
-                                    {selected.contractStart && <p><strong>Contrato:</strong> {selected.contractStart} al {selected.contractEnd}</p>}
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         }
