@@ -24,16 +24,23 @@
         const { useState } = React;
 
         const initialProperties = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Alquilada", price: "$450.000", features: "2 Dorm, 1 Baño, Balcón", contract: "CTR-001", lastUpdate: "2026-05-20" },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Alquilada", price: "$600.000", features: "3 Dorm, 2 Baños, Cochera", contract: "CTR-9901", lastUpdate: "2026-05-22" },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", status: "Vacante", price: "$320.000", features: "1 Dorm, Monoambiente", contract: "Sin contrato", lastUpdate: "2026-05-18" },
-            { id: 4, address: "San Martín 22", owner: "Juan Pérez", status: "En Mantenimiento", price: "$0", features: "Local Comercial", contract: "MT-005", lastUpdate: "2026-05-21" }
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", ownerLink: "#", tenant: "Juan Pérez", tenantLink: "#", status: "Alquilada", price: "$450.000", features: "2 Dorm, 1 Baño, Balcón", contract: "CTR-001", contractLink: "#", lastUpdate: "2026-05-20", location: "Córdoba, Centro", photos: [1, 2, 3] },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", ownerLink: "#", tenant: "María López", tenantLink: "#", status: "Alquilada", price: "$600.000", features: "3 Dorm, 2 Baños, Cochera", contract: "CTR-9901", contractLink: "#", lastUpdate: "2026-05-22", location: "Córdoba, B° Alberdi", photos: [1, 2] },
+            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", ownerLink: "#", tenant: "Ninguno", tenantLink: null, status: "Vacante", price: "$320.000", features: "1 Dorm, Monoambiente", contract: "Sin contrato", contractLink: null, lastUpdate: "2026-06-03", location: "Córdoba, Centro", photos: [1] },
+            { id: 4, address: "San Martín 22", owner: "Juan Pérez", ownerLink: "#", tenant: "Comercio S.A.", tenantLink: "#", status: "En Mantenimiento", price: "$0", features: "Local Comercial", contract: "MT-005", contractLink: "#", lastUpdate: "2026-05-21", location: "Córdoba, Nueva Cba", photos: [1, 2, 3, 4] }
         ];
 
         function App() {
             const [filter, setFilter] = useState('Todos');
             const [search, setSearch] = useState('');
             const [selectedProp, setSelectedProp] = useState(null);
+
+            const getAntiquity = (dateStr) => {
+                const date = new Date(dateStr);
+                const now = new Date();
+                const diff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+                return `${diff} días en este estado`;
+            };
 
             const filtered = initialProperties
                 .filter(p => filter === 'Todos' || p.status === filter)
@@ -47,7 +54,6 @@
 
             return (
                 <div className="flex h-screen bg-slate-50">
-                    {/* Sidebar simplificado */}
                     <aside className="w-72 bg-slate-900 p-6 flex flex-col text-white">
                         <h1 className="font-black text-xl mb-10">DptoLibre</h1>
                         <nav className="space-y-4">
@@ -88,21 +94,38 @@
                         </div>
                     </main>
 
-                    {/* Modal Legajo */}
                     {selectedProp && (
-                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-end">
+                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-end z-50">
                             <div className="w-[500px] bg-white h-full shadow-2xl slide-in-right p-8 overflow-y-auto">
                                 <div className="flex justify-between mb-8">
-                                    <h2 className="text-xl font-black">Legajo de Propiedad</h2>
+                                    <h2 className="text-xl font-black">Legajo: {selectedProp.address}</h2>
                                     <button onClick={() => setSelectedProp(null)} className="font-bold">Cerrar</button>
                                 </div>
-                                <div className="bg-slate-100 h-64 rounded-2xl mb-6"></div>
-                                <h3 className="font-black text-lg mb-2">{selectedProp.address}</h3>
-                                <p className="text-slate-500 mb-6">{selectedProp.features}</p>
                                 
-                                <div className="bg-slate-50 p-4 rounded-xl mb-6">
-                                    <p className="text-[10px] uppercase font-black text-slate-400">Dueño actual</p>
-                                    <p className="font-bold text-slate-800">{selectedProp.owner}</p>
+                                <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+                                    {selectedProp.photos.map((pic, i) => <div key={i} className="w-24 h-24 bg-slate-200 rounded-xl flex-shrink-0"></div>)}
+                                </div>
+
+                                <div className="space-y-4 mb-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-[10px] uppercase font-black text-slate-400">Dueño</p>
+                                            <a href={selectedProp.ownerLink} className="font-bold text-[#0055DD] underline">{selectedProp.owner}</a>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-[10px] uppercase font-black text-slate-400">Inquilino</p>
+                                            <a href={selectedProp.tenantLink} className="font-bold text-[#0055DD] underline">{selectedProp.tenant}</a>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl">
+                                        <p className="text-[10px] uppercase font-black text-slate-400">Contrato</p>
+                                        <a href={selectedProp.contractLink} className="font-bold text-slate-800 underline">{selectedProp.contract}</a>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl">
+                                        <p className="text-[10px] uppercase font-black text-slate-400">Ubicación y Estado</p>
+                                        <p className="font-bold text-slate-800">{selectedProp.location}</p>
+                                        <p className="text-xs text-emerald-600 font-bold">{getAntiquity(selectedProp.lastUpdate)}</p>
+                                    </div>
                                 </div>
                                 
                                 <button className="w-full py-4 bg-[#0055DD] text-white rounded-xl font-black uppercase text-xs">Editar Propiedad</button>
