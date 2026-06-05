@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DptoLibre Admin - Gestión de Propiedades</title>
+    <title>DptoLibre Admin Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
@@ -21,88 +19,87 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo } = React;
 
-        const initialProperties = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", features: ["2 Dorm", "Baño", "Balcón"], contract: "CTR-001", progress: 65, location: "Córdoba, Centro", lastUpdate: "2026-05-20", photos: [1, 2] },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Alquilada", features: ["3 Dorm", "Cochera", "Pileta"], contract: "CTR-9901", progress: 20, location: "Córdoba, B° Alberdi", lastUpdate: "2026-05-22", photos: [1] },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Vacante", features: ["Monoambiente"], contract: null, progress: 0, location: "Córdoba, Centro", lastUpdate: "2026-06-03", photos: [] },
-            { id: 4, address: "San Martín 22", owner: "Juan Pérez", tenant: "Comercio S.A.", status: "En Mantenimiento", features: ["Local", "Baño"], contract: "MT-005", progress: 90, location: "Córdoba, Nueva Cba", lastUpdate: "2026-05-21", photos: [1, 2, 3] }
+        const data = [
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", features: ["2 Dorm", "Baño", "Balcón"], contractStart: "2025-01-01", contractEnd: "2026-12-31", location: "Córdoba, Centro", lat: -31.4201, lng: -64.1888 },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "María López", status: "Alquilada", features: ["3 Dorm", "Cochera", "Pileta"], contractStart: "2026-01-01", contractEnd: "2027-12-31", location: "Córdoba, B° Alberdi", lat: -31.4150, lng: -64.1950 },
+            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "-", status: "Vacante", features: ["Monoambiente"], lastMaint: "2026-03-15", location: "Córdoba, Centro", lat: -31.4160, lng: -64.1850 }
         ];
 
         function App() {
-            const [filter, setFilter] = useState('Todos');
-            const [selectedProp, setSelectedProp] = useState(null);
+            const [search, setSearch] = useState('');
+            const [selected, setSelected] = useState(null);
 
-            const filtered = initialProperties.filter(p => filter === 'Todos' || p.status === filter);
+            const filtered = useMemo(() => data.filter(p => 
+                p.address.toLowerCase().includes(search.toLowerCase()) || 
+                p.tenant.toLowerCase().includes(search.toLowerCase())
+            ), [search]);
+
+            const calculateProgress = (p) => {
+                if (p.status === 'Alquilada') {
+                    const start = new Date(p.contractStart);
+                    const end = new Date(p.contractEnd);
+                    const total = end - start;
+                    const current = new Date() - start;
+                    return Math.min(Math.max((current / total) * 100, 0), 100);
+                }
+                const diff = Math.floor((new Date() - new Date(p.lastMaint || p.contractStart)) / (1000 * 60 * 60 * 24));
+                return diff;
+            };
 
             return (
-                <div className="flex h-screen bg-slate-50">
-                    <aside className="w-72 bg-slate-900 p-6 flex flex-col text-white">
-                        <h1 className="font-black text-xl mb-10">DptoLibre</h1>
-                        <nav className="space-y-4">
-                            {['Dashboard', 'Usuarios', 'Propiedades'].map(item => (
-                                <button key={item} className={`w-full p-4 rounded-xl text-left font-bold ${item === 'Propiedades' ? 'bg-[#0055DD]' : 'text-slate-400'}`}>{item}</button>
-                            ))}
-                        </nav>
+                <div className="flex h-screen">
+                    <aside className="w-64 bg-slate-900 p-6 text-white flex flex-col justify-between">
+                        <div><h1 className="font-black text-xl mb-10 text-emerald-400">DptoLibre</h1></div>
+                        <button className="bg-emerald-600 w-full py-3 rounded-xl font-bold">+ Nuevo Registro</button>
                     </aside>
 
-                    <main className="flex-1 p-10 overflow-y-auto">
+                    <main className="flex-1 p-8 overflow-y-auto">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-2xl font-black text-slate-800">Propiedades</h2>
-                            <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold text-sm">
-                                <span>+ Nuevo</span>
-                            </button>
+                            <h2 className="text-2xl font-black">Panel de Gestión</h2>
+                            <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por dirección o inquilino..." className="px-4 py-2 rounded-lg border w-80 shadow-sm" />
                         </div>
 
-                        <div className="flex gap-2 mb-6">
-                            {['Todos', 'Alquilada', 'Vacante', 'En Mantenimiento'].map(f => (
-                                <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase ${filter === f ? 'bg-[#0055DD] text-white' : 'bg-white border'}`}>{f}</button>
-                            ))}
-                        </div>
-
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white rounded-2xl border shadow-sm">
                             {filtered.map(p => (
-                                <div key={p.id} className="flex items-center p-6 border-b border-slate-100 hover:bg-slate-50 transition-all">
-                                    <div className="w-12 h-12 bg-slate-200 rounded-lg mr-6"></div>
-                                    <div className="w-1/4">
-                                        <p className="font-bold text-slate-800">{p.address}</p>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold">{p.location}</p>
+                                <div key={p.id} className="grid grid-cols-6 items-center p-6 border-b hover:bg-slate-50">
+                                    <div className="col-span-2 font-bold">{p.address}<p className="text-[10px] text-slate-400">{p.location}</p></div>
+                                    <div className="text-sm">{p.tenant}</div>
+                                    <div className="flex gap-1">
+                                        {p.features.map(f => <span key={f} className="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded">{f}</span>)}
                                     </div>
-                                    <div className="w-1/6 font-bold text-sm text-slate-600">{p.tenant}</div>
-                                    <div className="w-1/6 flex flex-wrap gap-1">
-                                        {p.features.map(f => <span key={f} className="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold">{f}</span>)}
+                                    <div className="text-[10px] font-bold text-slate-500">
+                                        {p.status === 'Alquilada' ? `Progreso: ${Math.round(calculateProgress(p))}%` : `Antigüedad: ${calculateProgress(p)} días`}
                                     </div>
-                                    <div className="w-1/6 mr-4">
-                                        {p.contract && (
-                                            <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                                                <div className="bg-[#0055DD] h-full" style={{ width: `${p.progress}%` }}></div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button onClick={() => setSelectedProp(p)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-[10px]">VER</button>
+                                    <button onClick={() => setSelected(p)} className="text-emerald-600 font-bold text-sm text-right">Ver Detalles</button>
                                 </div>
                             ))}
                         </div>
                     </main>
 
-                    {selectedProp && (
-                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-end z-50">
-                            <div className="w-[500px] bg-white h-full shadow-2xl slide-in-right p-8 overflow-y-auto">
-                                <h2 className="text-xl font-black mb-6">Detalle: {selectedProp.address}</h2>
-                                <div className="grid grid-cols-2 gap-4 mb-6">
-                                    {selectedProp.features.map(f => <div key={f} className="bg-slate-100 p-3 rounded-lg text-xs font-bold text-slate-600 text-center">{f}</div>)}
+                    {selected && (
+                        <div className="fixed inset-0 bg-black/50 flex justify-end z-50">
+                            <div className="w-[600px] bg-white h-full p-8 shadow-xl overflow-y-auto slide-in-right">
+                                <div className="flex justify-between items-start mb-6">
+                                    <h2 className="text-2xl font-black">{selected.address}</h2>
+                                    <button onClick={() => setSelected(null)} className="font-bold">✕</button>
                                 </div>
-                                <button onClick={() => setSelectedProp(null)} className="w-full py-4 bg-slate-800 text-white rounded-xl font-bold">Cerrar</button>
+                                <div className="h-48 bg-slate-200 rounded-xl mb-6 flex items-center justify-center font-bold text-slate-400">
+                                    [Mapa Interactivo en {selected.lat}, {selected.lng}]
+                                </div>
+                                <div className="space-y-4">
+                                    <p><strong>Inquilino:</strong> {selected.tenant}</p>
+                                    <p><strong>Contrato:</strong> {selected.contractStart || 'N/A'} - {selected.contractEnd || 'N/A'}</p>
+                                    <div className="border-t pt-4"><strong>Características:</strong> {selected.features.join(', ')}</div>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             );
         }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
