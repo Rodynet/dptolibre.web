@@ -16,10 +16,10 @@
         const { useState } = React;
 
         const data = [
-            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", status: "Alquilada" },
-            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", status: "Reservado" },
-            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", status: "Disponible" },
-            { id: 4, address: "San Luis 789", owner: "Marta Gomez", status: "Disponible" }
+            { id: 1, address: "Belgrano 880, 2A", owner: "Ana Silva", tenant: "Juan Pérez", status: "Alquilada", progress: "80%" },
+            { id: 2, address: "Caseros 1230, 4B", owner: "Carlos Paz", tenant: "Lucía M.", status: "Reservado", progress: "40%" },
+            { id: 3, address: "Av. Colón 450", owner: "Carlos Paz", tenant: "N/A", status: "Disponible", progress: "0%" },
+            { id: 4, address: "San Luis 789", owner: "Marta Gomez", tenant: "Pedro S.", status: "Disponible", progress: "10%" }
         ];
 
         function App() {
@@ -35,35 +35,54 @@
 
             return (
                 <div className="flex h-screen bg-slate-50">
-                    <aside className="w-20 bg-slate-900 flex flex-col items-center py-8 space-y-8">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-bold text-white">DL</div>
-                        <div className="text-slate-500 text-xs">Menu</div>
+                    <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col">
+                        <div className="flex items-center gap-2 font-bold text-xl mb-10 text-emerald-400">
+                            <div className="w-8 h-8 bg-emerald-500 rounded-lg"></div> DptoLibre
+                        </div>
+                        <nav className="space-y-4 text-slate-300">
+                            <p className="text-xs uppercase font-bold text-slate-500">Gestión</p>
+                            <div className="bg-slate-800 p-2 rounded-lg text-white">Propiedades</div>
+                            <div>Contratos</div>
+                            <div>Pagos</div>
+                            <p className="text-xs uppercase font-bold text-slate-500 pt-6">Admin</p>
+                            <div>Usuarios</div>
+                            <div>Configuración</div>
+                        </nav>
                     </aside>
 
                     <main className="flex-1 p-8 overflow-y-auto">
                         {!selectedId ? (
                             <>
                                 <div className="flex justify-between items-center mb-8">
-                                    <div className="flex gap-4 items-center w-full max-w-2xl">
-                                        <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar propiedad..." className="p-3 border rounded-xl w-full shadow-sm outline-none focus:ring-2 ring-emerald-500" />
+                                    <div className="flex gap-4 items-center w-full max-w-xl">
+                                        <input onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por dirección..." className="p-3 border rounded-xl w-full shadow-sm outline-none" />
                                         <select onChange={(e) => setFilter(e.target.value)} className="p-3 border rounded-xl shadow-sm outline-none">
                                             {['Todos', 'Alquilada', 'Reservado', 'Disponible'].map(f => <option key={f}>{f}</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex gap-2 bg-white p-1 rounded-xl border shadow-sm">
-                                        <button onClick={() => setView('grid')} className={`p-2 rounded-lg ${view === 'grid' ? 'bg-slate-100' : ''}`}>⊞</button>
-                                        <button onClick={() => setView('list')} className={`p-2 rounded-lg ${view === 'list' ? 'bg-slate-100' : ''}`}>☰</button>
-                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg ml-2 font-bold">+</button>
+                                    <div className="flex gap-4 items-center">
+                                        <div className="flex bg-white p-1 rounded-xl border shadow-sm">
+                                            <button onClick={() => setView('grid')} className={`p-2 rounded-lg ${view === 'grid' ? 'bg-slate-100' : ''}`}>⊞</button>
+                                            <button onClick={() => setView('list')} className={`p-2 rounded-lg ${view === 'list' ? 'bg-slate-100' : ''}`}>☰</button>
+                                        </div>
+                                        <button className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-700">
+                                            + Nuevo
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-3 gap-4" : "space-y-2"}>
+                                <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-2"}>
                                     {filteredData.map(p => (
-                                        <div key={p.id} onClick={() => setSelectedId(p.id)} className="bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md cursor-pointer flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-slate-200 rounded-lg shrink-0"></div>
-                                            <div>
-                                                <h3 className="font-semibold">{p.address}</h3>
-                                                <p className="text-xs text-slate-500">{p.status} • {p.owner}</p>
+                                        <div key={p.id} onClick={() => setSelectedId(p.id)} className="bg-white p-4 rounded-2xl border border-slate-200 hover:shadow-lg transition cursor-pointer flex gap-4">
+                                            <div className="w-24 h-24 bg-slate-200 rounded-xl shrink-0 border border-slate-300"></div>
+                                            <div className="flex-1">
+                                                <h3 className="font-bold text-lg">{p.address}</h3>
+                                                <div className="grid grid-cols-2 gap-x-4 text-sm text-slate-600 mt-2">
+                                                    <p>Prop: <span className="font-medium text-slate-900">{p.owner}</span></p>
+                                                    <p>Inq: <span className="font-medium text-slate-900">{p.tenant}</span></p>
+                                                    <p>Estado: <span className="text-emerald-600 font-semibold">{p.status}</span></p>
+                                                    <p>Avance: <span className="font-medium">{p.progress}</span></p>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -71,17 +90,20 @@
                             </>
                         ) : (
                             <div className="bg-white p-8 rounded-2xl border shadow-lg max-w-4xl mx-auto">
-                                <button onClick={() => setSelectedId(null)} className="text-slate-400 mb-6 font-semibold">← Volver al listado</button>
+                                <button onClick={() => setSelectedId(null)} className="text-slate-400 mb-6 font-semibold">← Volver atrás</button>
                                 <div className="grid grid-cols-2 gap-8">
-                                    <div>
-                                        <div className="h-40 bg-slate-200 rounded-xl mb-4"></div>
-                                        <div className="grid grid-cols-4 gap-2">{[1,2,3,4].map(i => <div key={i} className="h-12 bg-slate-100 rounded-lg"></div>)}</div>
-                                    </div>
+                                    <div className="w-full h-64 bg-slate-100 rounded-2xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400">Vista previa foto</div>
                                     <div className="space-y-4">
                                         <h2 className="text-2xl font-bold">{data.find(i=>i.id===selectedId).address}</h2>
-                                        <div className="h-32 bg-slate-100 rounded-xl border border-dashed flex items-center justify-center text-slate-400">Mapa de Ubicación</div>
-                                        <input className="w-full p-3 border rounded-xl" defaultValue={data.find(i=>i.id===selectedId).owner} />
-                                        <button className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Guardar Cambios</button>
+                                        <div className="bg-slate-50 p-4 rounded-xl border">
+                                            <p className="font-semibold mb-2">Detalles del Inquilino</p>
+                                            <input className="w-full p-2 border rounded-lg mb-2" defaultValue={data.find(i=>i.id===selectedId).tenant} />
+                                            <p className="font-semibold mb-2">Estado del trámite</p>
+                                            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                                <div className="bg-emerald-500 h-full" style={{width: data.find(i=>i.id===selectedId).progress}}></div>
+                                            </div>
+                                        </div>
+                                        <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold">Actualizar Datos</button>
                                     </div>
                                 </div>
                             </div>
