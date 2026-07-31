@@ -68,49 +68,59 @@
             ganancias: {
                 total: 840500,
                 honorarios: 550000,
-                floatInteres: 210500, // Intereses ganados por dejar la plata parqueada
-                markups: 80000 // Seguros, Informes, etc.
+                floatInteres: 210500, 
+                markups: 80000 
             },
             pasivos: {
                 total: 11700300,
                 duenosNeto: 11500300,
-                proveedores: 150000, // Arreglos de plomería, etc.
+                proveedores: 150000, 
                 retencionesArca: 50000
             }
         };
 
-        const transacciones = [
-            { id: "TRX-9921", fecha: "Hoy 10:45", tipo: "INGRESO", concepto: "Alquiler Abril - Caseros 1230", actor: "Marcos Galperin (Inquilino)", monto: 450000, status: "Acreditado" },
-            { id: "TRX-9922", fecha: "Hoy 10:45", tipo: "SPLIT_FEE", concepto: "Honorarios (5%) - Caseros 1230", actor: "Inmobiliaria Raíces", monto: 22500, status: "Retenido" },
-            { id: "TRX-9920", fecha: "Hoy 09:15", tipo: "EGRESO_EXTRA", concepto: "Arreglo Plomería (Ticket #882)", actor: "Juan Plomero (Contratista)", monto: -45000, status: "Descontado", afectaDueño: "Ana Silva" },
-            { id: "TRX-9919", fecha: "Ayer 15:30", tipo: "LIQUIDACION", concepto: "Liquidación Neta - Av. Colón 450", actor: "Carlos Paz (Dueño)", monto: -320000, status: "Transferido" },
-            { id: "TRX-9917", fecha: "Ayer 00:00", tipo: "INTERES", concepto: "Rendimiento FCI Money Market T+0", actor: "Fondo Resguardo", monto: 12450, status: "Acreditado a Gestor" }
+        const transaccionesMock = [
+            { id: "TRX-9921", fecha: "Hoy 10:45", tipo: "INGRESO", concepto: "Cobro Alquiler - Caseros 1230", actor: "Marcos Galperin (Inquilino)", monto: 450000, status: "Acreditado" },
+            { id: "TRX-9922", fecha: "Hoy 10:45", tipo: "COMISION", concepto: "Mi Comisión (5%) - Caseros 1230", actor: "Inmobiliaria Raíces", monto: 22500, status: "Retenido" },
+            { id: "TRX-9920", fecha: "Hoy 09:15", tipo: "GASTO", concepto: "Pago Plomería (Ticket #882)", actor: "Juan Plomero", monto: -45000, status: "Descontado", afectaDueño: "Ana Silva" },
+            { id: "TRX-9919", fecha: "Ayer 15:30", tipo: "PAGO_DUEÑO", concepto: "Transferencia a Dueño - Av. Colón 450", actor: "Carlos Paz", monto: -320000, status: "Transferido" },
+            { id: "TRX-9917", fecha: "Ayer 00:00", tipo: "INTERES", concepto: "Intereses ganados en el día", actor: "Fondo Inversión", monto: 12450, status: "Acreditado a Gestor" }
         ];
 
-        const propietariosPendientes = [
-            { id: 1, nombre: "Ana Silva", cbu: "0720000088000001234567", bruto: 450000, honorarios: -22500, impuestos: -4500, descuentos: -45000, neto: 378000, estado: "Listo" },
-            { id: 2, nombre: "Roberto Daer", cbu: "0170000044000005556667", bruto: 600000, honorarios: -30000, impuestos: -6000, descuentos: 0, neto: 564000, estado: "Listo" }
+        const propietariosMock = [
+            { id: 1, nombre: "Ana Silva", cbu: "0720000088000001234567", bruto: 450000, honorarios: -22500, impuestos: -4500, descuentos: -45000, neto: 378000, estado: "Pendiente" },
+            { id: 2, nombre: "Roberto Daer", cbu: "0170000044000005556667", bruto: 600000, honorarios: -30000, impuestos: -6000, descuentos: 0, neto: 564000, estado: "Pagado" }
         ];
 
-        const liquidacionesArca = [
+        const liquidacionesArcaMock = [
             { id: "LQ-2026-04-123", propiedad: "Caseros 1230, 4B", emisor: "Roberto Daer", receptor: "Marcos Galperin", monto: 450000, honorarios: 22500, estado: "PENDIENTE" },
             { id: "LQ-2026-04-124", propiedad: "Av. Colón 450, 10C", emisor: "Ana Silva", receptor: "Lucía Martínez", monto: 320000, honorarios: 16000, estado: "FACTURADO" }
         ];
 
         function TesoreriaApp() {
-            const [activeModule, setActiveModule] = useState('tesoreria'); // 'tesoreria', 'arca'
-            const [activeTesoreriaTab, setActiveTesoreriaTab] = useState('conciliacion'); // conciliacion, pagar_duenos
-            const [showEgresoModal, setShowEgresoModal] = useState(false);
+            const [activeModule, setActiveModule] = useState('caja'); // 'caja', 'arca'
+            
+            // Estados para Caja (Tesorería)
+            const [activeCajaTab, setActiveCajaTab] = useState('historial'); // historial, pagar_duenos
+            const [showGastoModal, setShowGastoModal] = useState(false);
+            const [searchHistory, setSearchHistory] = useState('');
+            const [searchOwners, setSearchOwners] = useState('');
+            const [ownerFilter, setOwnerFilter] = useState('Todos');
+
+            // Estados para ARCA
+            const [activeArcaTab, setActiveArcaTab] = useState('comprobantes'); // comprobantes, configuracion
+            const [searchArca, setSearchArca] = useState('');
+            const [arcaFilter, setArcaFilter] = useState('TODOS');
             const [selectedLiq, setSelectedLiq] = useState(null);
 
-            // --- COMPONENTES AUXILIARES ---
+            // --- COMPONENTES UI AUXILIARES ---
             const TypeBadge = ({ tipo }) => {
                 switch(tipo) {
-                    case 'INGRESO': return <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="arrow-down-left" size={12} className="inline mr-1"/> Ingreso</span>;
-                    case 'SPLIT_FEE': return <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="split" size={12} className="inline mr-1"/> Split Fee</span>;
-                    case 'EGRESO_EXTRA': return <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="wrench" size={12} className="inline mr-1"/> Gasto Op.</span>;
-                    case 'LIQUIDACION': return <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="arrow-up-right" size={12} className="inline mr-1"/> Liquidación</span>;
-                    case 'INTERES': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="trending-up" size={12} className="inline mr-1"/> Float/Yield</span>;
+                    case 'INGRESO': return <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="arrow-down-left" size={12} className="inline mr-1"/> Ingreso Inquilino</span>;
+                    case 'COMISION': return <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="pie-chart" size={12} className="inline mr-1"/> Mi Comisión</span>;
+                    case 'GASTO': return <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="wrench" size={12} className="inline mr-1"/> Pago Arreglo</span>;
+                    case 'PAGO_DUEÑO': return <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="arrow-up-right" size={12} className="inline mr-1"/> Envío a Dueño</span>;
+                    case 'INTERES': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest"><Icon name="trending-up" size={12} className="inline mr-1"/> Interés a Favor</span>;
                     default: return null;
                 }
             };
@@ -121,193 +131,237 @@
                         <div className="w-10 h-10 bg-[#0055DD] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">d</div>
                         <div>
                             <h1 className="font-black tracking-tighter text-xl leading-none italic">DptoLibre</h1>
-                            <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mt-1">Secretaría Digital</p>
+                            <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mt-1">Gestión Financiera</p>
                         </div>
                     </div>
                     
                     <nav className="flex-1 space-y-2">
-                        <p className="px-3 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest mt-4">Hub Financiero</p>
+                        <p className="px-3 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-widest mt-4">Mis Módulos</p>
                         <button 
-                            onClick={() => setActiveModule('tesoreria')}
-                            className={`w-full flex items-center gap-3 p-4 rounded-xl font-bold transition-all ${activeModule === 'tesoreria' ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                            onClick={() => setActiveModule('caja')}
+                            className={`w-full flex items-center gap-3 p-4 rounded-xl font-bold transition-all ${activeModule === 'caja' ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                         >
                             <Icon name="wallet" size={20} />
-                            <span>Tesorería y Clearing</span>
+                            <span>Mi Caja y Movimientos</span>
                         </button>
                         <button 
                             onClick={() => setActiveModule('arca')}
                             className={`w-full flex items-center gap-3 p-4 rounded-xl font-bold transition-all ${activeModule === 'arca' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                         >
                             <Icon name="receipt" size={20} />
-                            <span>Facturación ARCA</span>
+                            <span>Facturación AFIP/ARCA</span>
                         </button>
                     </nav>
                 </aside>
             );
 
-            const TesoreriaModule = () => (
-                <div className="animate-in">
-                    <header className="flex justify-between items-end mb-8">
-                        <div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Tesorería y Clearing</h2>
-                            <p className="text-sm text-slate-500 font-medium mt-1">Orquestación de flujos de fondos y liquidaciones automáticas.</p>
-                        </div>
-                        <button onClick={() => setShowEgresoModal(true)} className="bg-amber-100 text-amber-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-200 active:scale-95 transition-all flex items-center gap-2">
-                            <Icon name="wrench" size={16} /> Imputar Gasto a Dueño
-                        </button>
-                    </header>
+            const CajaModule = () => {
+                const historyFiltered = transaccionesMock.filter(t => 
+                    t.concepto.toLowerCase().includes(searchHistory.toLowerCase()) || 
+                    t.actor.toLowerCase().includes(searchHistory.toLowerCase())
+                );
 
-                    {/* KPI - LOS 3 BOLSILLOS DESGLOSADOS */}
-                    <div className="grid grid-cols-3 gap-6 mb-8">
-                        {/* 1. Recaudación en Custodia */}
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
-                            <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Fondos en Custodia</p>
-                                <Icon name="database" className="text-slate-300" size={20}/>
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-800 mb-4">${balances.custodia.total.toLocaleString()}</h3>
-                            <div className="space-y-3 border-t border-slate-100 pt-4 flex-1">
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-500 font-medium">Capital Alquileres</span>
-                                    <span className="font-bold text-slate-700">${balances.custodia.capital.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-emerald-600 font-bold flex items-center gap-1"><Icon name="trending-up" size={12}/> Intereses (FCI T+0)</span>
-                                    <span className="font-black text-emerald-600">+${balances.custodia.interesesAcumulados.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <p className="text-[9px] font-black text-emerald-500 uppercase mt-4 text-center bg-emerald-50 py-1.5 rounded-lg">Rindiendo +${balances.custodia.interesesDia.toLocaleString()} por día</p>
-                        </div>
+                const ownersFiltered = propietariosMock.filter(p => 
+                    (ownerFilter === 'Todos' || p.estado === ownerFilter) &&
+                    p.nombre.toLowerCase().includes(searchOwners.toLowerCase())
+                );
 
-                        {/* 2. Mis Ganancias (Admin) */}
-                        <div className="bg-slate-900 p-6 rounded-[2rem] shadow-xl text-white relative overflow-hidden flex flex-col">
-                            <Icon name="zap" className="absolute right-[-10px] top-[-10px] opacity-10 text-[#00D1FF]" size={100}/>
-                            <div className="relative z-10 flex-1 flex flex-col">
-                                <p className="text-[10px] font-black text-[#00D1FF] uppercase tracking-widest mb-4">2. Ingresos Inmobiliaria</p>
-                                <h3 className="text-3xl font-black text-white mb-4">${balances.ganancias.total.toLocaleString()}</h3>
-                                <div className="space-y-3 border-t border-white/10 pt-4 flex-1">
+                return (
+                    <div className="animate-in">
+                        <header className="flex justify-between items-end mb-8">
+                            <div>
+                                <h2 className="text-3xl font-black text-slate-800 tracking-tight">Mi Caja y Dinero</h2>
+                                <p className="text-sm text-slate-500 font-medium mt-1">Controlá el dinero que entra, tu ganancia y lo que debés pagar a dueños.</p>
+                            </div>
+                            <button onClick={() => setShowGastoModal(true)} className="bg-amber-100 text-amber-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-200 active:scale-95 transition-all flex items-center gap-2">
+                                <Icon name="wrench" size={16} /> Cargar pago de arreglo
+                            </button>
+                        </header>
+
+                        {/* KPI - LOS 3 BOLSILLOS EXPLICADOS FACIL */}
+                        <div className="grid grid-cols-3 gap-6 mb-8">
+                            {/* 1. Recaudación en Custodia */}
+                            <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">1. Dinero de Alquileres <br/><span className="text-[8px] font-bold text-slate-400 normal-case">(En tránsito en tu cuenta)</span></p>
+                                    <Icon name="database" className="text-slate-300" size={20}/>
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-800 mb-4">${balances.custodia.total.toLocaleString()}</h3>
+                                <div className="space-y-3 border-t border-slate-100 pt-4 flex-1">
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400 font-medium">Honorarios Base</span>
-                                        <span className="font-bold text-white">${balances.ganancias.honorarios.toLocaleString()}</span>
+                                        <span className="text-slate-500 font-medium">Lo que pagaron los inquilinos</span>
+                                        <span className="font-bold text-slate-700">${balances.custodia.capital.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="text-[#00D1FF] font-bold">Spread Financiero (Float)</span>
-                                        <span className="font-black text-[#00D1FF]">+${balances.ganancias.floatInteres.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400 font-medium">Markups (Verificaciones)</span>
-                                        <span className="font-bold text-white">${balances.ganancias.markups.toLocaleString()}</span>
+                                        <span className="text-emerald-600 font-bold flex items-center gap-1"><Icon name="trending-up" size={12}/> Interés generado</span>
+                                        <span className="font-black text-emerald-600">+${balances.custodia.interesesAcumulados.toLocaleString()}</span>
                                     </div>
                                 </div>
-                                <button className="mt-4 w-full bg-[#0055DD] text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/50 hover:bg-blue-700 transition-colors">
-                                    Retirar a Mi Cuenta
+                                <p className="text-[9px] font-black text-emerald-500 uppercase mt-4 text-center bg-emerald-50 py-1.5 rounded-lg">Estás ganando +${balances.custodia.interesesDia.toLocaleString()} por día</p>
+                            </div>
+
+                            {/* 2. Mis Ganancias */}
+                            <div className="bg-slate-900 p-6 rounded-[2rem] shadow-xl text-white relative overflow-hidden flex flex-col">
+                                <Icon name="zap" className="absolute right-[-10px] top-[-10px] opacity-10 text-[#00D1FF]" size={100}/>
+                                <div className="relative z-10 flex-1 flex flex-col">
+                                    <p className="text-[10px] font-black text-[#00D1FF] uppercase tracking-widest mb-4">2. Ganancia Inmobiliaria</p>
+                                    <h3 className="text-3xl font-black text-white mb-4">${balances.ganancias.total.toLocaleString()}</h3>
+                                    <div className="space-y-3 border-t border-white/10 pt-4 flex-1">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-slate-400 font-medium">Mi comisión (Base)</span>
+                                            <span className="font-bold text-white">${balances.ganancias.honorarios.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-[#00D1FF] font-bold">Intereses por dejar la plata acá</span>
+                                            <span className="font-black text-[#00D1FF]">+${balances.ganancias.floatInteres.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-slate-400 font-medium">Extras (Verificaciones, etc)</span>
+                                            <span className="font-bold text-white">${balances.ganancias.markups.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    <button className="mt-4 w-full bg-[#0055DD] text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-colors">
+                                        Retirar a mi banco
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 3. A Pagar */}
+                            <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">3. A pagar a dueños y otros</p>
+                                    <Icon name="users" className="text-slate-300" size={20}/>
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-800 mb-4">${balances.pasivos.total.toLocaleString()}</h3>
+                                <div className="space-y-3 border-t border-slate-100 pt-4 flex-1">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 font-medium">Plata que es de los dueños</span>
+                                        <span className="font-bold text-slate-700">${balances.pasivos.duenosNeto.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-amber-600 font-bold">A pagar a plomeros/electricistas</span>
+                                        <span className="font-bold text-amber-700">${balances.pasivos.proveedores.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 font-medium">Impuestos ARCA (Retenciones)</span>
+                                        <span className="font-bold text-slate-700">${balances.pasivos.retencionesArca.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <button onClick={() => setActiveCajaTab('pagar_duenos')} className="mt-4 w-full bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+                                    <Icon name="arrow-up-right" size={14}/> Ir a Pagar
                                 </button>
                             </div>
                         </div>
 
-                        {/* 3. Pasivos / A Pagar */}
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
-                            <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">3. Cuentas a Pagar (Pasivo)</p>
-                                <Icon name="users" className="text-slate-300" size={20}/>
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-800 mb-4">${balances.pasivos.total.toLocaleString()}</h3>
-                            <div className="space-y-3 border-t border-slate-100 pt-4 flex-1">
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-500 font-medium">Neto a Dueños</span>
-                                    <span className="font-bold text-slate-700">${balances.pasivos.duenosNeto.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-amber-600 font-bold">Proveedores (Tickets)</span>
-                                    <span className="font-bold text-amber-700">${balances.pasivos.proveedores.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-500 font-medium">Retenciones ARCA</span>
-                                    <span className="font-bold text-slate-700">${balances.pasivos.retencionesArca.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <button onClick={() => setActiveTesoreriaTab('pagar_duenos')} className="mt-4 w-full bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
-                                <Icon name="arrow-up-right" size={14}/> Proceder a Liquidar
-                            </button>
+                        {/* TABS DE CAJA */}
+                        <div className="flex gap-2 mb-6">
+                            {[
+                                { id: 'historial', label: 'Historial de Movimientos' },
+                                { id: 'pagar_duenos', label: 'Pagar a Propietarios' }
+                            ].map(t => (
+                                <button 
+                                    key={t.id}
+                                    onClick={() => setActiveCajaTab(t.id)}
+                                    className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeCajaTab === t.id ? 'bg-[#0055DD] text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
                         </div>
-                    </div>
 
-                    {/* TABS DE TABLAS TESORERIA */}
-                    <div className="flex gap-2 mb-6">
-                        {[
-                            { id: 'conciliacion', label: 'Libro Mayor (Conciliación)' },
-                            { id: 'pagar_duenos', label: 'Liquidaciones a Dueños' }
-                        ].map(t => (
-                            <button 
-                                key={t.id}
-                                onClick={() => setActiveTesoreriaTab(t.id)}
-                                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTesoreriaTab === t.id ? 'bg-[#0055DD] text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
-                            >
-                                {t.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* TABLA: LIBRO MAYOR */}
-                    {activeTesoreriaTab === 'conciliacion' && (
-                        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 border-b border-slate-100">
-                                    <tr>
-                                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Transacción</th>
-                                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Concepto / Activo</th>
-                                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Actor Involucrado</th>
-                                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Naturaleza</th>
-                                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Monto Neto</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {transacciones.map((t, i) => (
-                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="p-5">
-                                                <p className="font-bold text-slate-800 text-sm">{t.id}</p>
-                                                <p className="text-[10px] font-bold text-slate-400">{t.fecha}</p>
-                                            </td>
-                                            <td className="p-5 text-sm font-medium text-slate-600">{t.concepto}</td>
-                                            <td className="p-5 text-xs font-bold text-slate-700">{t.actor}</td>
-                                            <td className="p-5 text-center"><TypeBadge tipo={t.tipo} /></td>
-                                            <td className={`p-5 text-right font-black ${t.monto > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
-                                                {t.monto > 0 ? '+' : ''}{t.monto.toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {/* TABLA: LIQUIDAR A DUEÑOS */}
-                    {activeTesoreriaTab === 'pagar_duenos' && (
-                        <div className="space-y-6 animate-in">
-                            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                        {/* TABLA: HISTORIAL */}
+                        {activeCajaTab === 'historial' && (
+                            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in">
+                                <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex gap-4">
+                                    <div className="relative flex-1">
+                                        <Icon name="search" className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar por concepto o persona..." 
+                                            value={searchHistory}
+                                            onChange={(e) => setSearchHistory(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-[#0055DD]"
+                                        />
+                                    </div>
+                                </div>
                                 <table className="w-full text-left">
                                     <thead className="bg-slate-50 border-b border-slate-100">
                                         <tr>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest"><input type="checkbox" defaultChecked className="rounded accent-[#0055DD]"/></th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Propietario / Destino</th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Cobro Bruto</th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Mis Honorarios</th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Ret. ARCA</th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Deducciones (Tickets)</th>
-                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Neto a Transferir</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Fecha / ID</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Detalle del Movimiento</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Involucrado</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Tipo</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Monto</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {propietariosPendientes.map((p, i) => (
+                                        {historyFiltered.map((t, i) => (
                                             <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="p-5"><input type="checkbox" defaultChecked className="rounded accent-[#0055DD] w-4 h-4"/></td>
                                                 <td className="p-5">
-                                                    <p className="font-bold text-slate-800 text-sm flex items-center gap-2"><Icon name="user" size={14} className="text-slate-400"/> {p.nombre}</p>
+                                                    <p className="font-bold text-slate-800 text-sm">{t.fecha}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400">{t.id}</p>
+                                                </td>
+                                                <td className="p-5 text-sm font-medium text-slate-600">{t.concepto}</td>
+                                                <td className="p-5 text-xs font-bold text-slate-700">{t.actor}</td>
+                                                <td className="p-5 text-center"><TypeBadge tipo={t.tipo} /></td>
+                                                <td className={`p-5 text-right font-black ${t.monto > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                                                    {t.monto > 0 ? '+' : ''}{t.monto.toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* TABLA: PAGAR A DUEÑOS */}
+                        {activeCajaTab === 'pagar_duenos' && (
+                            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in">
+                                <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex gap-4 justify-between items-center">
+                                    <div className="relative w-80">
+                                        <Icon name="search" className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar propietario..." 
+                                            value={searchOwners}
+                                            onChange={(e) => setSearchOwners(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-[#0055DD]"
+                                        />
+                                    </div>
+                                    <select 
+                                        className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                                        value={ownerFilter}
+                                        onChange={e => setOwnerFilter(e.target.value)}
+                                    >
+                                        <option value="Todos">Todos los estados</option>
+                                        <option value="Pendiente">Para pagar</option>
+                                        <option value="Pagado">Ya pagados</option>
+                                    </select>
+                                </div>
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest"><input type="checkbox" className="rounded accent-[#0055DD]"/></th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Propietario / Destino</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Alquiler Cobrado</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Mi Comisión</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Descuento (Arreglos)</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Total a Transferir</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {ownersFiltered.map((p, i) => (
+                                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="p-5"><input type="checkbox" defaultChecked={p.estado==='Pendiente'} disabled={p.estado==='Pagado'} className="rounded accent-[#0055DD] w-4 h-4"/></td>
+                                                <td className="p-5">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-slate-800 text-sm">{p.nombre}</p>
+                                                        {p.estado === 'Pagado' && <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase px-2 py-0.5 rounded">Pagado</span>}
+                                                    </div>
                                                     <p className="text-[10px] font-bold text-slate-400 mt-0.5 font-mono">CBU: {p.cbu.substring(0, 4)}***{p.cbu.substring(p.cbu.length - 4)}</p>
                                                 </td>
                                                 <td className="p-5 text-right text-sm font-medium text-slate-600">${p.bruto.toLocaleString()}</td>
                                                 <td className="p-5 text-right text-sm font-black text-[#0055DD]">{p.honorarios.toLocaleString()}</td>
-                                                <td className="p-5 text-right text-sm font-medium text-slate-500">{p.impuestos.toLocaleString()}</td>
                                                 <td className="p-5 text-right text-sm font-black text-red-500">
                                                     {p.descuentos < 0 ? (
                                                         <span className="flex items-center justify-end gap-1"><Icon name="alert-circle" size={12}/> {p.descuentos.toLocaleString()}</span>
@@ -319,68 +373,163 @@
                                     </tbody>
                                 </table>
                                 <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
-                                    <button onClick={() => alert("Batch procesado. Transferencias en cola vía API Bancaria.")} className="bg-[#0D1B4B] text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-2 hover:bg-blue-900 transition-colors">
-                                        <Icon name="send" size={16}/> Autorizar y Transferir Batch ($942.000)
+                                    <button onClick={() => alert("Transferencias enviadas exitosamente a los bancos de los dueños.")} className="bg-[#0D1B4B] text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-2 hover:bg-blue-900 transition-colors">
+                                        <Icon name="send" size={16}/> Enviar dinero a dueños seleccionados
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-            );
-
-            const ArcaModule = () => (
-                <div className="animate-in">
-                    <header className="flex justify-between items-end mb-8">
-                        <div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Facturación Electrónica ARCA</h2>
-                            <p className="text-sm text-slate-500 font-medium mt-1">Emite comprobantes fiscales automáticamente integrados con la AFIP/ARCA.</p>
-                        </div>
-                        <button className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 transition-all flex items-center gap-2">
-                            <Icon name="zap" size={16} /> Facturación Masiva Lote
-                        </button>
-                    </header>
-
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-100">
-                                <tr>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">ID Operación</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Propiedad / Actores</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Alquiler Bruto (Dueño)</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Honorarios (Inmo)</th>
-                                    <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Estado ARCA</th>
-                                    <th className="p-5"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {liquidacionesArca.map((liq, i) => (
-                                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="p-5 font-bold text-slate-800 text-sm">{liq.id}</td>
-                                        <td className="p-5">
-                                            <p className="font-bold text-slate-800 text-sm">{liq.propiedad}</p>
-                                            <p className="text-[10px] text-slate-500 mt-1">De: {liq.emisor} <Icon name="arrow-right" size={10} className="inline mx-1"/> Para: {liq.receptor}</p>
-                                        </td>
-                                        <td className="p-5 text-right font-medium text-slate-600">${liq.monto.toLocaleString()}</td>
-                                        <td className="p-5 text-right font-black text-[#0055DD]">${liq.honorarios.toLocaleString()}</td>
-                                        <td className="p-5 text-center">
-                                            {liq.estado === 'FACTURADO' 
-                                                ? <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Facturado OK</span>
-                                                : <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Pendiente CAE</span>
-                                            }
-                                        </td>
-                                        <td className="p-5 text-right">
-                                            <button onClick={() => setSelectedLiq(liq)} className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors">
-                                                Ver Detalle
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        )}
                     </div>
-                </div>
-            );
+                );
+            };
+
+            const ArcaModule = () => {
+                const arcaFiltered = liquidacionesArcaMock.filter(l => 
+                    (arcaFilter === 'TODOS' || l.estado === arcaFilter) &&
+                    (l.propiedad.toLowerCase().includes(searchArca.toLowerCase()) || l.receptor.toLowerCase().includes(searchArca.toLowerCase()))
+                );
+
+                return (
+                    <div className="animate-in">
+                        <header className="flex justify-between items-end mb-8">
+                            <div>
+                                <h2 className="text-3xl font-black text-slate-800 tracking-tight">Facturación Electrónica</h2>
+                                <p className="text-sm text-slate-500 font-medium mt-1">Conexión directa con AFIP/ARCA para emitir tus comprobantes automáticamente.</p>
+                            </div>
+                            <button className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 transition-all flex items-center gap-2">
+                                <Icon name="zap" size={16} /> Emitir Facturas Pendientes
+                            </button>
+                        </header>
+
+                        {/* TABS DE ARCA */}
+                        <div className="flex gap-2 mb-6">
+                            {[
+                                { id: 'comprobantes', label: 'Lista de Comprobantes a Emitir' },
+                                { id: 'configuracion', label: 'Configurar Datos de ARCA' }
+                            ].map(t => (
+                                <button 
+                                    key={t.id}
+                                    onClick={() => setActiveArcaTab(t.id)}
+                                    className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeArcaTab === t.id ? 'bg-[#0055DD] text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {activeArcaTab === 'comprobantes' && (
+                            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in">
+                                <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex gap-4 justify-between items-center">
+                                    <div className="relative w-80">
+                                        <Icon name="search" className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar propiedad o inquilino..." 
+                                            value={searchArca}
+                                            onChange={(e) => setSearchArca(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-[#0055DD]"
+                                        />
+                                    </div>
+                                    <select 
+                                        className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                                        value={arcaFilter}
+                                        onChange={e => setArcaFilter(e.target.value)}
+                                    >
+                                        <option value="TODOS">Todas las facturas</option>
+                                        <option value="PENDIENTE">Falta Facturar</option>
+                                        <option value="FACTURADO">Ya facturados (OK)</option>
+                                    </select>
+                                </div>
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Propiedad / Actores</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Alquiler Bruto (Factura a Inquilino)</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Tu Comisión (Factura a Dueño)</th>
+                                            <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Estado ARCA</th>
+                                            <th className="p-5"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {arcaFiltered.map((liq, i) => (
+                                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="p-5">
+                                                    <p className="font-bold text-slate-800 text-sm">{liq.propiedad}</p>
+                                                    <p className="text-[10px] text-slate-500 mt-1">Dueño: {liq.emisor} <br/> Inquilino: {liq.receptor}</p>
+                                                </td>
+                                                <td className="p-5 text-right font-medium text-slate-600">${liq.monto.toLocaleString()}</td>
+                                                <td className="p-5 text-right font-black text-[#0055DD]">${liq.honorarios.toLocaleString()}</td>
+                                                <td className="p-5 text-center">
+                                                    {liq.estado === 'FACTURADO' 
+                                                        ? <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Facturado OK</span>
+                                                        : <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Falta emitir</span>
+                                                    }
+                                                </td>
+                                                <td className="p-5 text-right">
+                                                    <button onClick={() => setSelectedLiq(liq)} className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors">
+                                                        Ver Detalle
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {activeArcaTab === 'configuracion' && (
+                            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-3xl animate-in">
+                                <h3 className="text-xl font-black text-slate-800 mb-2">Datos Fiscales de tu Inmobiliaria</h3>
+                                <p className="text-sm text-slate-500 mb-8">Estos datos se usarán para conectar con ARCA y emitir tus facturas por honorarios automáticamente.</p>
+                                
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Razón Social</label>
+                                            <input type="text" value="Inmobiliaria Raíces SRL" className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:border-[#0055DD]" readOnly />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">CUIT</label>
+                                            <input type="text" value="30-71234567-8" className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:border-[#0055DD]" readOnly />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Condición IVA</label>
+                                            <select className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:border-[#0055DD]">
+                                                <option>Responsable Inscripto</option>
+                                                <option>Monotributo</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Punto de Venta</label>
+                                            <input type="text" placeholder="Ej: 0001" defaultValue="0001" className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:border-[#0055DD]" />
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6 border-t border-slate-100">
+                                        <h4 className="text-sm font-black text-slate-800 mb-4">Certificados Digitales (Web Services ARCA)</h4>
+                                        <div className="space-y-3">
+                                            <div className="p-4 border-2 border-dashed border-emerald-200 bg-emerald-50 rounded-xl flex items-center justify-between">
+                                                <div className="flex items-center gap-3"><Icon name="file-badge" className="text-emerald-600"/><span className="text-sm font-bold text-emerald-800">Certificado.crt subido correctamente</span></div>
+                                                <button className="text-[10px] font-black text-slate-500 uppercase hover:text-slate-700">Cambiar</button>
+                                            </div>
+                                            <div className="p-4 border-2 border-dashed border-emerald-200 bg-emerald-50 rounded-xl flex items-center justify-between">
+                                                <div className="flex items-center gap-3"><Icon name="file-key" className="text-emerald-600"/><span className="text-sm font-bold text-emerald-800">LlavePrivada.key subida correctamente</span></div>
+                                                <button className="text-[10px] font-black text-slate-500 uppercase hover:text-slate-700">Cambiar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button className="mt-4 bg-[#0D1B4B] text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                                        Guardar Configuración
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
 
             // --- VISTAS INTERNAS Y MODALES ---
             return (
@@ -401,28 +550,28 @@
                         </header>
 
                         <main className="flex-1 overflow-y-auto custom-scrollbar p-10">
-                            {activeModule === 'tesoreria' && <TesoreriaModule />}
+                            {activeModule === 'caja' && <CajaModule />}
                             {activeModule === 'arca' && <ArcaModule />}
                         </main>
                     </div>
 
-                    {/* MODAL: CARGAR EGRESO EXTRAORDINARIO (ARREGLOS) */}
-                    {showEgresoModal && (
+                    {/* MODAL: CARGAR GASTO EXTRAORDINARIO */}
+                    {showGastoModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
                             <div className="bg-white rounded-[3rem] p-10 w-full max-w-lg shadow-2xl relative animate-in">
-                                <button onClick={() => setShowEgresoModal(false)} className="absolute right-8 top-8 text-slate-300 hover:text-slate-500"><Icon name="x" size={24}/></button>
+                                <button onClick={() => setShowGastoModal(false)} className="absolute right-8 top-8 text-slate-300 hover:text-slate-500"><Icon name="x" size={24}/></button>
                                 
                                 <div className="mb-8">
                                     <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4">
                                         <Icon name="wrench" size={32} />
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-800 leading-tight">Imputar Gasto Operativo</h2>
-                                    <p className="text-slate-500 text-sm mt-2 font-medium">Asocia el costo de un arreglo para que se descuente automáticamente del próximo alquiler del dueño.</p>
+                                    <h2 className="text-2xl font-black text-slate-800 leading-tight">Cargar pago de arreglo</h2>
+                                    <p className="text-slate-500 text-sm mt-2 font-medium">Este dinero se le descontará automáticamente al dueño de la propiedad en su próximo cobro.</p>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Propiedad / Dueño afectado</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">¿A qué propiedad corresponde?</label>
                                         <select className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#0055DD] outline-none">
                                             <option>Caseros 1230, 4B (Ana Silva)</option>
                                             <option>Av. Colón 450 (Roberto Daer)</option>
@@ -431,22 +580,22 @@
                                     
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Monto a descontar ($)</label>
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Monto gastado ($)</label>
                                             <input type="number" placeholder="45000" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#0055DD] outline-none" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">N° Ticket Asoc.</label>
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">N° de Ticket asociado</label>
                                             <input type="text" placeholder="#882" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#0055DD] outline-none" />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Concepto / Proveedor</label>
-                                        <input type="text" placeholder="Arreglo de cañería baño (Plomería San Juan)" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#0055DD] outline-none" />
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Detalle del gasto</label>
+                                        <input type="text" placeholder="Arreglo caño baño (Plomería San Juan)" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#0055DD] outline-none" />
                                     </div>
 
-                                    <button onClick={() => { alert("Gasto imputado. Se deducirá en la próxima liquidación."); setShowEgresoModal(false); }} className="w-full bg-[#0D1B4B] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl mt-4 active:scale-95 transition-all">
-                                        Guardar y Aplicar Descuento
+                                    <button onClick={() => { alert("Gasto guardado. Se descontará en el próximo pago al dueño."); setShowGastoModal(false); }} className="w-full bg-[#0D1B4B] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl mt-4 active:scale-95 transition-all">
+                                        Guardar Descuento
                                     </button>
                                 </div>
                             </div>
@@ -463,29 +612,29 @@
                                     <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
                                         <Icon name="receipt" size={32} />
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-800 leading-tight">Emisión de Comprobantes</h2>
-                                    <p className="text-slate-500 text-sm mt-2 font-medium">Orquestación fiscal para {selectedLiq.propiedad}.</p>
+                                    <h2 className="text-2xl font-black text-slate-800 leading-tight">Emitir Facturas</h2>
+                                    <p className="text-slate-500 text-sm mt-2 font-medium">Facturación para {selectedLiq.propiedad}.</p>
                                 </div>
 
                                 <div className="space-y-4 mb-8">
                                     <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex justify-between items-center">
                                         <div>
                                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Factura Alquiler (Por cuenta y orden)</p>
-                                            <p className="text-sm font-bold text-slate-700">De: {selectedLiq.emisor} <br/>Para: {selectedLiq.receptor}</p>
+                                            <p className="text-sm font-bold text-slate-700">El dueño {selectedLiq.emisor} le factura a {selectedLiq.receptor}</p>
                                         </div>
                                         <p className="text-xl font-black text-slate-800">${selectedLiq.monto.toLocaleString()}</p>
                                     </div>
                                     <div className="bg-blue-50 border border-blue-100 p-5 rounded-2xl flex justify-between items-center">
                                         <div>
-                                            <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest mb-1">Factura Honorarios Inmobiliaria</p>
-                                            <p className="text-sm font-bold text-blue-900">De: Inmobiliaria Raíces <br/>Para: {selectedLiq.emisor}</p>
+                                            <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest mb-1">Factura por tu Comisión</p>
+                                            <p className="text-sm font-bold text-blue-900">Le facturas a {selectedLiq.emisor} (Dueño)</p>
                                         </div>
                                         <p className="text-xl font-black text-[#0055DD]">${selectedLiq.honorarios.toLocaleString()}</p>
                                     </div>
                                 </div>
 
                                 {selectedLiq.estado === 'PENDIENTE' ? (
-                                    <button onClick={() => { alert("Conectando con WSFEV1 de ARCA. CAE generado exitosamente."); setSelectedLiq(null); }} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-600/30 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                    <button onClick={() => { alert("Conectando con ARCA. Facturas emitidas con éxito."); setSelectedLiq(null); }} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-600/30 active:scale-95 transition-all flex items-center justify-center gap-2">
                                         <Icon name="zap" size={18}/> Emitir ambas facturas en ARCA
                                     </button>
                                 ) : (
@@ -505,22 +654,3 @@
     </script>
 </body>
 </html>
-```
-
-And here is the diff to add the new Treasury & Billing Console to the Customer Journey Blueprint (`directorio.html`).
-
-```html:Directorio Customer Journey:directorio.html
-<!-- ... existing code ... -->
-                    { 
-                        id: 3, 
-                        title: "Servicios", 
-                        subtitle: "Operación y Mora",
-                        links: [
-                            { url: "https://rodynet.github.io/dptolibre.web/admin.usuarios.v2.html", label: "Web: Sitio de Usuarios" },
-                            { url: "https://rodynet.github.io/dptolibre.web/admin.propiedades.v1.html", label: "Web: Sitio de Propiedades" },
-                            { url: "https://rodynet.github.io/dptolibre.web/alta.contrato.v2.html", label: "Web: Carga de Contrato" },
-                            { url: "https://rodynet.github.io/dptolibre.web/admin.administracion.html", label: "Web: Gestión" },
-                            { url: "https://rodynet.github.io/dptolibre.web/admin.tesoreria.html", label: "Web: Tesorería" }
-                        ]
-                    },
-<!-- ... existing code ... -->
