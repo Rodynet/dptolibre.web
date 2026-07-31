@@ -1,99 +1,311 @@
-import React, { useState } from 'react';
-import { Menu, X, Plus, Search, Filter, FileText, User, Home, Shield, DollarSign, TrendingUp } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DptoLibre Admin - Directorio de Contratos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel para procesar JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-blue: #0055DD;
+            --brand-dark: #0D1B4B;
+        }
 
-const App = () => {
-  const [viewMode, setViewMode] = useState('list');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState(null);
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f1f5f9;
+            color: #1e293b;
+            margin: 0;
+            overflow: hidden;
+        }
 
-  const contracts = [
-    { id: "CT-001", prop: "Belgrano 880, 2A", tenant: "Juan Pérez", owner: "Ana Silva", progress: 80, desde: "01/01/2026", hasta: "01/01/2027", status: "Al día", score: 9.5, amount: "$250.000", paymentStatus: "Pagado" },
-    { id: "CT-002", prop: "Caseros 1230, 4B", tenant: "Lucía M.", owner: "Carlos Paz", progress: 45, desde: "15/05/2026", hasta: "15/05/2027", status: "Atrasado", score: 7.2, amount: "$220.000", paymentStatus: "Pendiente" },
-  ];
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  return (
-    <div className="flex h-screen bg-slate-50 font-sans">
-      {/* Sidebar / Hamburguesa */}
-      {isMenuOpen && (
-        <div className="absolute top-0 right-0 w-64 h-full bg-white shadow-2xl z-50 p-6">
-          <button onClick={() => setIsMenuOpen(false)} className="mb-8"><X /></button>
-          <nav className="space-y-6">
-            <a href="#" className="flex items-center gap-3 font-semibold text-slate-700"><Home /> Inicio</a>
-            <a href="#" className="flex items-center gap-3 font-semibold text-slate-700"><User /> Usuarios</a>
-            <a href="#" className="flex items-center gap-3 font-semibold text-slate-700"><Home /> Propiedades</a>
-            <a href="#" className="flex items-center gap-3 font-semibold text-slate-700"><FileText /> Contratos</a>
-          </nav>
-        </div>
-      )}
+        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-      <main className="flex-1 p-8 overflow-y-auto">
-        {/* Barra Superior */}
-        <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl border shadow-sm">
-          <div className="flex gap-4 items-center">
-            <div className="flex border rounded-lg overflow-hidden">
-              <button onClick={() => setViewMode('grid')} className={`p-2 ${viewMode === 'grid' ? 'bg-slate-200' : ''}`}>▦</button>
-              <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-slate-200' : ''}`}>≡</button>
-            </div>
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm"><Plus size={16} /> Nuevo Contrato</button>
-          </div>
-          <button onClick={() => setIsMenuOpen(true)} className="p-2 border rounded-xl"><Menu /></button>
-        </div>
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+            transform: scale(1.001);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-        {/* Tabla Contratos */}
-        <div className="bg-white rounded-2xl border shadow-sm overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 text-slate-600 border-b">
-              <tr>
-                <th className="p-4 text-left">ID</th>
-                <th className="p-4 text-left">Propiedad/Inquilino</th>
-                <th className="p-4 text-left">Progreso</th>
-                <th className="p-4 text-left">Monto</th>
-                <th className="p-4 text-left">Score</th>
-                <th className="p-4 text-left">Estado Pago</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contracts.map(c => (
-                <tr key={c.id} onClick={() => setSelectedContract(c)} className="border-b hover:bg-slate-50 cursor-pointer">
-                  <td className="p-4 font-bold">{c.id}</td>
-                  <td className="p-4">
-                    <p className="font-semibold">{c.prop}</p>
-                    <p className="text-xs text-slate-500">{c.tenant}</p>
-                  </td>
-                  <td className="p-4 w-32">
-                    <div className="w-full bg-slate-100 h-2 rounded-full"><div className="bg-emerald-500 h-2 rounded-full" style={{width: `${c.progress}%`}}></div></div>
-                  </td>
-                  <td className="p-4 font-bold">{c.amount}</td>
-                  <td className="p-4 text-emerald-600 font-bold">{c.score}</td>
-                  <td className="p-4"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${c.paymentStatus === 'Pagado' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{c.paymentStatus}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-        {/* Modal de Detalle */}
-        {selectedContract && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-3xl w-full max-w-2xl">
-              <div className="flex justify-between mb-6">
-                <h2 className="text-xl font-bold">Detalle {selectedContract.id}</h2>
-                <button onClick={() => setSelectedContract(null)}><X /></button>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <button className="bg-emerald-600 text-white p-3 rounded-xl">Registrar Pago en Efectivo</button>
-                <button className="border p-3 rounded-xl">Continuidad Contractual</button>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between border-b pb-2"><span>Plazos:</span><span className="font-bold">{selectedContract.desde} a {selectedContract.hasta}</span></div>
-                <div className="flex justify-between border-b pb-2"><span>Punitorios:</span><span className="text-red-600 font-bold">$0</span></div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
 
-export default App;
+        const mockContracts = [
+            { id: "CT-001", prop: "Belgrano 880, 2A", tenant: "Juan Pérez", owner: "Ana Silva", progress: 80, desde: "01/01/2026", hasta: "01/01/2027", status: "Al día", score: 9.5, amount: "$250.000", paymentStatus: "Pagado" },
+            { id: "CT-002", prop: "Caseros 1230, 4B", tenant: "Lucía M.", owner: "Carlos Paz", progress: 45, desde: "15/05/2026", hasta: "15/05/2027", status: "Atrasado", score: 7.2, amount: "$220.000", paymentStatus: "Pendiente" },
+        ];
+
+        function DptoLibreContractsAdmin() {
+            const [viewMode, setViewMode] = useState('list');
+            const [search, setSearch] = useState('');
+            const [selectedContract, setSelectedContract] = useState(null);
+
+            const filteredContracts = mockContracts
+                .filter(c => c.prop.toLowerCase().includes(search.toLowerCase()) || c.tenant.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase()));
+
+            const Sidebar = () => (
+                <aside className="w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800 p-6 fixed left-0 top-0 z-40">
+                    <div className="flex items-center gap-3 mb-10 px-2">
+                        <div className="w-10 h-10 bg-[#0055DD] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">d</div>
+                        <div>
+                            <h1 className="font-black tracking-tighter text-xl leading-none">DptoLibre</h1>
+                            <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mt-1">Secretaría Digital</p>
+                        </div>
+                    </div>
+                    
+                    <nav className="flex-1 space-y-2">
+                        {[
+                            { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                            { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+                            { id: 'propiedades', label: 'Propiedades', icon: 'building' },
+                            { id: 'tesoreria', label: 'Tesorería', icon: 'wallet' },
+                            { id: 'tickets', label: 'Tickets', icon: 'wrench' },
+                            { id: 'contratos', label: 'Contratos', icon: 'file-text' }
+                        ].map(item => (
+                            <button 
+                                key={item.id} 
+                                className={`w-full flex items-center gap-3 p-4 rounded-xl font-bold transition-all ${item.id === 'contratos' ? 'bg-[#0055DD] text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                            >
+                                <Icon name={item.icon} size={20} />
+                                <span>{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-700 flex items-center gap-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" className="w-10 h-10 rounded-xl bg-slate-700" alt="Admin" />
+                        <div className="overflow-hidden">
+                            <p className="text-xs font-bold text-white truncate">Inmobiliaria Raíces</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Administrador</p>
+                        </div>
+                    </div>
+                </aside>
+            );
+
+            const Header = () => (
+                <header className="h-24 bg-white border-b border-slate-200 flex justify-between items-center px-10 fixed top-0 right-0 left-72 z-30 shadow-sm">
+                    <div>
+                        <h2 className="text-2xl font-black text-[#0D1B4B] tracking-tight">Gestión de Contratos</h2>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Directorio de Acuerdos Vigentes</p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="relative">
+                            <Icon name="search" className="absolute left-4 top-3 text-slate-300" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Buscar ID, Propiedad..." 
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm w-80 focus:ring-2 focus:ring-[#0055DD] outline-none font-medium transition-all" 
+                            />
+                        </div>
+                        <div className="flex gap-3 border-l border-slate-200 pl-6">
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#0055DD]' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    <Icon name="layout-grid" size={18} />
+                                </button>
+                                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-[#0055DD]' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    <Icon name="list" size={18} />
+                                </button>
+                            </div>
+                            <button className="bg-[#0055DD] text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
+                                <Icon name="plus" size={16} /> Nuevo Contrato
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            );
+
+            return (
+                <div className="flex h-screen w-full bg-[#f8fafc] font-sans overflow-hidden">
+                    <Sidebar />
+                    
+                    <div className="flex-1 flex flex-col pl-72">
+                        <Header />
+
+                        <main className="flex-1 overflow-y-auto no-scrollbar pt-24 p-10 animate-in">
+                            <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
+                                {viewMode === 'list' ? (
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-50/50 border-b border-slate-100">
+                                            <tr>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">ID</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Propiedad / Inquilino</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Progreso</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Monto Mensual</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Score</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Estado Pago</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {filteredContracts.map(c => (
+                                                <tr key={c.id} onClick={() => setSelectedContract(c)} className="table-row-hover transition-colors cursor-pointer group">
+                                                    <td className="p-6 font-bold text-slate-800">{c.id}</td>
+                                                    <td className="p-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center"><Icon name="file-text" size={18}/></div>
+                                                            <div>
+                                                                <p className="font-black text-slate-800 text-sm">{c.prop}</p>
+                                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Inquilino: {c.tenant}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6 w-48">
+                                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                                            <div className="bg-[#0055DD] h-full rounded-full" style={{width: `${c.progress}%`}}></div>
+                                                        </div>
+                                                        <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase text-right">{c.progress}% completado</p>
+                                                    </td>
+                                                    <td className="p-6 font-black text-slate-800">{c.amount}</td>
+                                                    <td className="p-6 text-center">
+                                                        <span className="text-emerald-600 font-black bg-emerald-50 px-3 py-1 rounded-lg">{c.score}</span>
+                                                    </td>
+                                                    <td className="p-6 text-center">
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${c.paymentStatus === 'Pagado' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200 animate-pulse'}`}>
+                                                            {c.paymentStatus}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30">
+                                        {filteredContracts.map(c => (
+                                            <div key={c.id} onClick={() => setSelectedContract(c)} className="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-[#0055DD] group">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="file-text" size={24}/></div>
+                                                    <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${c.paymentStatus === 'Pagado' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                                        {c.paymentStatus}
+                                                    </span>
+                                                </div>
+                                                <h3 className="font-black text-slate-800 text-lg mb-1">{c.prop}</h3>
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase mb-4">ID: {c.id} • Dueño: {c.owner}</p>
+                                                
+                                                <div className="bg-slate-50 p-4 rounded-2xl space-y-3">
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Monto</span>
+                                                        <span className="font-black text-slate-800">{c.amount}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Inquilino Score</span>
+                                                        <span className="font-black text-emerald-600">{c.score}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </main>
+                    </div>
+
+                    {/* Modal Detalles Contrato */}
+                    {selectedContract && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex justify-end">
+                            <div className="bg-white w-[500px] h-full shadow-2xl slide-in-right flex flex-col border-l border-slate-200">
+                                
+                                <header className="p-8 border-b border-slate-100 flex justify-between items-start bg-slate-50">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
+                                            <Icon name="file-text" size={28} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalle de Contrato</p>
+                                            <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-none mt-1">{selectedContract.id}</h2>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setSelectedContract(null)} className="p-2 bg-white border border-slate-200 rounded-full text-slate-400 hover:bg-slate-100 transition-colors">
+                                        <Icon name="x" size={20} />
+                                    </button>
+                                </header>
+
+                                <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+                                    <section className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
+                                        <Icon name="building-2" size={80} className="absolute right-[-10px] bottom-[-10px] opacity-10" />
+                                        <h3 className="font-black text-lg mb-4">{selectedContract.prop}</h3>
+                                        <div className="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Inquilino</p>
+                                                <p className="text-sm font-bold mt-1">{selectedContract.tenant}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Propietario</p>
+                                                <p className="text-sm font-bold mt-1">{selectedContract.owner}</p>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-4">
+                                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Finanzas y Vigencia</h3>
+                                        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Monto Mensual</span>
+                                                <span className="text-xl font-black text-slate-800">{selectedContract.amount}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado Actual</span>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider ${selectedContract.paymentStatus === 'Pagado' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>{selectedContract.status} ({selectedContract.paymentStatus})</span>
+                                            </div>
+                                            <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plazo</span>
+                                                <span className="text-xs font-bold text-slate-700">{selectedContract.desde} <Icon name="arrow-right" size={10} className="inline mx-1"/> {selectedContract.hasta}</span>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-4">
+                                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Acciones Operativas</h3>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <button className="w-full bg-[#0055DD] text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                                <Icon name="banknote" size={16} /> Registrar Pago en Efectivo
+                                            </button>
+                                            <button className="w-full bg-white border border-slate-200 text-slate-600 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                                                <Icon name="refresh-cw" size={16} /> Iniciar Renovación
+                                            </button>
+                                            <button className="w-full bg-white border border-slate-200 text-slate-600 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                                                <Icon name="download" size={16} /> Descargar PDF Digital
+                                            </button>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DptoLibreContractsAdmin />);
+    </script>
+</body>
+</html>
